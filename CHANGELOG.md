@@ -249,3 +249,43 @@
 - `app/llm_agent.py` has no pytest coverage; all four live runs were manual.
 - The live certificate's Kappa is still the D-009 simulated judge, and its
   `a1_outcome` comes from a single live session (n = 1).
+
+## 2026-10-21 — Phase 6: Enterprise UI overhaul for the Streamlit dashboard
+
+### Changed
+- `dashboard/app.py` replaced. `st.set_page_config(page_title="Agent Reliability
+  Lab", page_icon="🛡️", layout="wide")`, dark professional styling injected with
+  `st.markdown("<style>...</style>", unsafe_allow_html=True)`, a "Lab Controls"
+  sidebar with "Run Live Audit", three metric cards (`st.columns(3)`) for A1
+  status, Cohen's Kappa and the final verdict, and
+  `st.tabs(["Live Trace", "Certificate"])` with a Markdown certificate plus a
+  `st.download_button` serving a `.md` file.
+- Audit state lives in `st.session_state.audit`; A1 is scored by `evaluate_a1`
+  over a `FakeDB` rebuilt to the recorded end state (order `refunded`, one
+  $100.00 refund on ORD-9999) and the certificate is generated from
+  `band_for(kappa)` — no literal score anywhere.
+
+### Recorded
+- **D-017 — The dashboard replays the recorded live run and caches the
+  calibration.** No model is called from the UI: a live two-turn run took
+  380-597s and `app/llm_agent.py` reads `GEMINI_API_KEY` at import time. Kappa is
+  wrapped in `st.cache_data(max_entries=1)` because `run_calibration` draws from
+  a module-level RNG — four consecutive calls in one process returned `0.56`,
+  `0.80`, `0.6799999999999999`, `0.6799999999999999`, so a second click would
+  have re-rolled INDICATIVE/QUALIFIED into AUDIT-GRADE/CLEAN from the same
+  simulated judge. The trace tab shows the recorded `tool_called`/`args`
+  evidence, not invented model prose (the replies were never logged).
+
+### Verified
+- `streamlit.testing.v1.AppTest`: title, sidebar button, both tabs, muted `—`
+  cards before a run, then `PASSED` / `0.56` / `QUALIFIED` after the click, all
+  seven certificate sections (§1.1-§1.7), and one download button serving
+  `agent-reliability-certificate.md`; a second click keeps `0.56`.
+- `pytest tests/ -q -l` → **9 passed**.
+
+### Open
+- `dashboard/app.py` still has no pytest coverage; AppTest was run by hand.
+- The dashboard duplicates the band→verdict map (`VERDICT_BY_BAND`) because
+  `evals/certificate.py` keeps `_VERDICT_BY_BAND` private.
+- The trace tab's provenance caption names live run 4, while the certificate's
+  §1.5 Kappa is still the D-009 simulated judge.

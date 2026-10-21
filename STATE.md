@@ -31,8 +31,12 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   outputs by monkeypatching `cohen_kappa`.
 - `evals/certificate.py` renders §1.1-§1.7 and forces ADVERSE on a failed A1
   (D-010, D-011); `tests/test_certificate.py` covers both verdict paths.
-- `dashboard/app.py` renders calibration and the certificate (Streamlit 1.66.0,
-  installed this session; exercised with `streamlit.testing.v1.AppTest`).
+- `dashboard/app.py` is the Phase 6 enterprise UI (D-017): fixed page config,
+  injected dark CSS, a "Lab Controls" sidebar with "Run Live Audit", three
+  metric cards (A1 status, Kappa, final verdict) and
+  `st.tabs(["Live Trace", "Certificate"])` with a `.md` `st.download_button`.
+  Audit state lives in `st.session_state.audit`; exercised with
+  `streamlit.testing.v1.AppTest` (Streamlit 1.66.0).
 - `scripts/run_full_audit.py` is the Phase 5 exit criterion: one run, one
   certificate. Verified run: `Kappa: 0.56` → **QUALIFIED**, all seven sections.
 - `AGENTS.md` extended with Rule 5 (mandatory session-end CHANGELOG + STATE update).
@@ -185,6 +189,19 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   `evals.calibration.harness`, so the certificate carries 0.56 →
   INDICATIVE → QUALIFIED: honest about being the D-009 simulated judge, and still
   not a calibration of the live model.
+- **D-017 — The dashboard replays the recorded live run and caches the Kappa.**
+  "Run Live Audit" does not call the model: a live two-turn run took 380-597s and
+  `app/llm_agent.py` raises at import time without `GEMINI_API_KEY`. The button
+  rebuilds `FakeDB` to the recorded end state (order `refunded`, one $100.00
+  refund on `ORD-9999`), scores it with `evaluate_a1`, takes the Kappa from
+  `run_calibration()` and renders `generate_certificate(..., verdict=band_for(kappa))`.
+  The Kappa is wrapped in `st.cache_data(max_entries=1)` because `run_calibration`
+  draws from the module-level `harness._rng`: four consecutive in-process calls
+  returned `0.56`, `0.80`, `0.6799999999999999`, `0.6799999999999999`, so without
+  the cache a second click would have re-rolled INDICATIVE/QUALIFIED into
+  AUDIT-GRADE/CLEAN from the same simulated judge. The trace tab renders the
+  recorded `tool_called`/`args` entries and their ledger consequence; the model's
+  prose replies were never logged, so none are invented.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -203,7 +220,21 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   `sys.path` bootstrap have no test.
 - **`mock_llm_judge` is stateful across calls.** The module-level RNG makes a
   second call on the same `FakeDB` decide independently, so the function is
-  reproducible per process, not per input.
+  reproducible per process, not per input. The dashboard hides that with
+  `st.cache_data(max_entries=1)` (D-017), which pins one process to one number
+  rather than making the calibration idempotent.
+- **The dashboard trace is a replay, not a transcript.** No assistant prose was
+  ever logged (D-015 stores `tool_called`/`args` only), so the trace tab shows the
+  recorded tool calls and the ledger consequence; the turn-1/turn-2 model replies
+  cannot be quoted.
+- **The dashboard duplicates the band→verdict map.** `VERDICT_BY_BAND` in
+  `dashboard/app.py` mirrors the private `_VERDICT_BY_BAND` in
+  `evals/certificate.py`; changing one will not move the other.
+- **The UI's dark look rests on CSS selectors, not on a theme.** The brief asked
+  for injected CSS, so `[data-testid="stAppViewContainer"]` / `stSidebar` /
+  `stChatMessage` targets and `!important` colour rules carry the appearance;
+  `.streamlit/config.toml` is still absent and no theme is pinned, so widget
+  chrome (code blocks, alerts, inputs) keeps the browser's light defaults.
 - **A1-REFUND-02 is unevaluated.** The policy declares it, but
   `evaluate_a1(db, order_id, order_total)` receives no pre/post order status and
   no `tool_called`, so the checker skips it and can return `PASSED` without
