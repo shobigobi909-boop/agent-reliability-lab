@@ -19,7 +19,11 @@ suspended (D-005). Phase 4 not started.
 - `evals/invariant_checker.py` evaluates A1-REFUND-01 and A1-REFUND-03 against
   `FakeDB` state.
 - Treatment applied (D-006). `./.venv/Scripts/python.exe -m pytest tests/ -q -l`
-  reports **3 passed**; before the guard it reported 1 failed, 2 passed.
+  reports **4 passed**; before the guard it reported 1 failed, 2 passed.
+- The A1 checker's FAIL path is now covered by
+  `tests/test_a1_fail_path.py` (ledger corrupted directly, agent bypassed).
+- `evals/calibration/eval_judge.py` holds the Phase 4 baseline judge
+  (`evaluate_trace`, D-007). Uncommitted at the time of writing.
 - `AGENTS.md` extended with Rule 5 (mandatory session-end CHANGELOG + STATE update).
 - `requirements.txt` gained `pyyaml` (imported by the A1 evaluator).
 
@@ -55,21 +59,30 @@ suspended (D-005). Phase 4 not started.
   `tests/test_mcp_refund_transport.py` (now asserts the duplicate is blocked at
   the MCP boundary). The Phase 1 gate test
   (`tests/test_refund_agent.py::test_duplicate_refund_is_rejected_and_not_persisted`)
-  was not edited and passes unmodified. Suite: **3 passed**.
+  was not edited and passes unmodified. Suite after the fail-path test: **4 passed**.
+- **D-007 — Phase 4 baseline judge delegates to the deterministic checker.**
+  `evals/calibration/eval_judge.py::evaluate_trace(db, order_id, order_total)`
+  returns `True` when `evaluate_a1` reports `PASSED`, `False` otherwise. It issues
+  nothing and inspects only existing `FakeDB` state, so it is a pure read. Scope
+  is deliberately the checker's scope: A1-REFUND-01 and A1-REFUND-03, not
+  A1-REFUND-02. Its purpose is to be the fixed reference the future LLM judge is
+  graded against through the `aehf` Cohen's Kappa calibration; the LLM judge is
+  not trusted until that agreement is measured.
 
 ## Known Gaps
 - **A1-REFUND-02 is unevaluated.** The policy declares it, but
   `evaluate_a1(db, order_id, order_total)` receives no pre/post order status and
   no `tool_called`, so the checker skips it and can return `PASSED` without
   covering it. Closing this needs a trajectory-aware state input.
-- **No test currently proves the A1 checker can FAIL.** After D-006 the only A1
-  test seeds state through the guarded agent, so it exercises the `PASSED` path
-  only. A detection test that writes two ledger entries straight into `FakeDB`
-  is needed before the checker is trusted as an instrument.
+- **The baseline judge inherits that blind spot.** `evaluate_trace` returns
+  `True` for a trace whose only violation is an A1-REFUND-02 transition, because
+  its single source of truth is `evaluate_a1`. A Cohen's Kappa score against this
+  baseline will not measure the LLM judge's ability to catch A1-REFUND-02.
 - Decision numbering has no D-004 in this file; D-005 follows the Auditor's
   numbering rather than the local sequence.
 
 ## Next Actions
-1. User review of `app/agent.py` and the two flipped test expectations.
-2. Add the direct-state detection test for the A1 checker (see Known Gaps).
-3. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input.
+1. User review of `app/agent.py`, the flipped test expectations, and D-007.
+2. Commit `evals/calibration/eval_judge.py` (still untracked).
+3. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
+   before the LLM judge's calibration is treated as complete.

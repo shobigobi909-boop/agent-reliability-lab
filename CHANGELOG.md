@@ -64,3 +64,19 @@
 ### Open
 - No test now proves the A1 checker can FAIL; needs a direct-`FakeDB` state test.
 - A1-REFUND-02 remains unevaluated.
+
+## 2026-10-21 — A1 FAIL-path coverage + Phase 4 judge baseline
+
+### Added
+- `tests/test_a1_fail_path.py` — corrupts `FakeDB.ledger` directly (two entries,
+  agent bypassed) and asserts `evaluate_a1` returns
+  `{"status": "FAILED", "invariant": "A1-REFUND-01"}`. Committed as `c6060cc`.
+- `evals/calibration/eval_judge.py` — `evaluate_trace`, the baseline judge over
+  `evaluate_a1` (D-007). Untracked at the time of writing.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **4 passed**.
+
+### Open
+- `evaluate_trace` inherits the A1-REFUND-02 blind spot; a Cohen's Kappa score
+  taken against it does not measure detection of that invariant.
