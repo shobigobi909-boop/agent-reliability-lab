@@ -7,3 +7,4 @@ mcp
 pyyaml
 aehf
 streamlit
+google-genai
