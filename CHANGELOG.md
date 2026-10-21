@@ -178,4 +178,24 @@
 - Band-derivation edge cases (contradiction `ValueError`, 0.60/0.43 boundaries,
   §1.2/§1.5 rendered text) remain untested.
 - `dashboard/app.py` has no automated test in the suite; it was exercised with
-  AppTest by hand, not committed as a pytest.
+  AppTest by hand, not committed as a pytest.## 2026-10-21 — Phase 5 exit criterion: end-to-end audit orchestrator
+
+### Added
+- `scripts/run_full_audit.py` — start banner, `run_calibration()`,
+  `generate_certificate(..., verdict=band_for(kappa), a1_outcome=True)`,
+  certificate, completion banner (D-012). Inserts the repo root on `sys.path` for
+  the same reason as `harness.py`.
+
+### Verified
+- `./.venv/Scripts/python.exe -X utf8 scripts/run_full_audit.py` →
+  `Kappa: 0.56`, `INDICATIVE`, **QUALIFIED** certificate with §1.1-§1.7,
+  `--- AUDIT RUN COMPLETE ---`.
+- `pytest tests/ -q -l` → **9 passed**.
+
+### Committed
+- `47f0f0c` — Phase 5: Complete Streamlit dashboard and Certificate sections.
+
+### Open
+- The Kappa in the certificate is the simulated judge's agreement (D-009), not a
+  calibrated model. The pipeline is proven; the statistic is not evidence.
+- `dashboard/app.py` and the certificate edge cases still have no pytest coverage.

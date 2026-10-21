@@ -3,8 +3,9 @@ Last updated: 2026-10-21
 Stack: Python 3.12.10 (`.venv` interpreter), FastAPI, Pytest, PyYAML, Streamlit
 
 ## Current Focus
-Phases 1-3 complete on the refund patient (treatment applied, D-006). Belay
-suspended (D-005). Phase 4 not started.
+Phase 5 complete: one end-to-end audit run produces a full certificate. Belay
+suspended (D-005), treatment applied (D-006), calibration and dashboard shipped
+(D-008 to D-011), orchestrator closed the exit criterion (D-012).
 
 ## Status
 - Project initialized. Folders and empty files created.
@@ -19,13 +20,21 @@ suspended (D-005). Phase 4 not started.
 - `evals/invariant_checker.py` evaluates A1-REFUND-01 and A1-REFUND-03 against
   `FakeDB` state.
 - Treatment applied (D-006). `./.venv/Scripts/python.exe -m pytest tests/ -q -l`
-  reports **4 passed**; before the guard it reported 1 failed, 2 passed.
-- The A1 checker's FAIL path is now covered by
-  `tests/test_a1_fail_path.py` (ledger corrupted directly, agent bypassed).
-- `evals/calibration/eval_judge.py` holds the Phase 4 baseline judge
-  (`evaluate_trace`, D-007). Uncommitted at the time of writing.
+  reports **9 passed**; before the guard it reported 1 failed, 2 passed.
+- The A1 checker's FAIL path is covered by `tests/test_a1_fail_path.py`
+  (ledger corrupted directly, agent bypassed).
+- `evals/calibration/` holds `eval_judge.py` (D-007), `run_aehf.py` (D-008) and
+  `harness.py` (D-009); `tests/test_calibration_bands.py` locks the three band
+  outputs by monkeypatching `cohen_kappa`.
+- `evals/certificate.py` renders §1.1-§1.7 and forces ADVERSE on a failed A1
+  (D-010, D-011); `tests/test_certificate.py` covers both verdict paths.
+- `dashboard/app.py` renders calibration and the certificate (Streamlit 1.66.0,
+  installed this session; exercised with `streamlit.testing.v1.AppTest`).
+- `scripts/run_full_audit.py` is the Phase 5 exit criterion: one run, one
+  certificate. Verified run: `Kappa: 0.56` → **QUALIFIED**, all seven sections.
 - `AGENTS.md` extended with Rule 5 (mandatory session-end CHANGELOG + STATE update).
-- `requirements.txt` gained `pyyaml` (imported by the A1 evaluator).
+- `requirements.txt` gained `pyyaml` (A1 evaluator), `aehf` (calibration) and
+  `streamlit` (dashboard).
 
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
@@ -121,6 +130,15 @@ suspended (D-005). Phase 4 not started.
   of duplicating thresholds. `dashboard/app.py` runs the calibration and renders
   the certificate; it reads Kappa from `st.session_state`, so the two buttons are
   independent. `tests/test_certificate.py` covers both ADVERSE and CLEAN paths.
+- **D-012 — Full audit orchestrator closes the Phase 5 exit criterion.**
+  `scripts/run_full_audit.py` inserts the repo root on `sys.path` (same reason as
+  `harness.py`), prints a start banner, calls `run_calibration()`, passes the
+  returned Kappa through `band_for` into `generate_certificate(a1_outcome=True)`,
+  prints the certificate, then a completion banner. Verified on Windows:
+  `Kappa: 0.56` → `INDICATIVE` → **QUALIFIED** certificate with §1.1-§1.7, run
+  under `python -X utf8`. The Kappa it prints is the simulated judge's agreement
+  (D-009): the orchestrator proves the pipeline is wired end to end, not that any
+  model is calibrated.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -134,9 +152,9 @@ suspended (D-005). Phase 4 not started.
   folds that gap into `INDICATIVE` (`>= 0.60` audit, `>= 0.43` indicative, else
   not reportable) rather than reporting a decent score as unclassifiable. The
   Auditor should confirm the boundary; the code is a threshold, not the spec text.
-- **`harness.py` has no pytest coverage.** It is exercised only by running it, so
-  the 25/25 split, the flip rate and the verdict mapping are unguarded against
-  regression.
+- **`harness.py` is only partly tested.** `tests/test_calibration_bands.py` covers
+  the verdict mapping; the 25/25 dataset split, the realised flip rate and the
+  `sys.path` bootstrap have no test.
 - **`mock_llm_judge` is stateful across calls.** The module-level RNG makes a
   second call on the same `FakeDB` decide independently, so the function is
   reproducible per process, not per input.
@@ -157,13 +175,12 @@ suspended (D-005). Phase 4 not started.
   numbering rather than the local sequence.
 
 ## Next Actions
-1. User review of `evals/certificate.py`, D-010, and the ADVERSE gap.
-2. Commit `evals/certificate.py`, `tests/test_calibration_bands.py`, and this
-   state update (all uncommitted).
-3. Decide whether `generate_certificate` takes an A1 outcome so ADVERSE becomes
-   reachable, and whether §1.4 is intentionally absent.
-4. Add pytest coverage for `evals/certificate.py`.
-5. Build a real LLM judge and a real labeled corpus before any Kappa number is
-   treated as calibration.
-6. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
-   before the LLM judge's calibration is treated as complete.
+1. User review of `scripts/run_full_audit.py` and D-012.
+2. Replace the simulated judge with a real LLM judge and a human-labeled corpus;
+   the 0.56 in the current certificate is simulated and must not be published.
+3. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input before
+   the LLM judge's calibration is treated as complete.
+4. Add pytest coverage for `dashboard/app.py` and the certificate edge cases
+   (contradiction `ValueError`, 0.60/0.43 boundaries).
+5. Decide whether the signed-certificate placeholders (`[QA Auditor]`) and the
+   AIUC-1 self-description stay as literal text in a shipped certificate.
