@@ -101,4 +101,25 @@
 - `91f14dd` — Phase 4 prep: baseline judge wrapper and state updates.
 
 ### Test state
-- `pytest tests/ -q` → **4 passed** (re-checked after installing `aehf`).
+- `pytest tests/ -q` → **4 passed** (re-checked after installing `aehf`).## 2026-10-21 — Phase 4: calibration harness
+
+### Added
+- `evals/calibration/harness.py` — `generate_dataset` (50 `FakeDB`, 25 valid /
+  25 flawed), `mock_llm_judge` (inverts `evaluate_trace` with p = 0.15 from a
+  fixed seed), `run_calibration` (Kappa via `aehf`, v2.3 verdict bands).
+
+### Observation
+- Seed run flips **11 of 50 (22%)**, not 15% — sampling noise from a Bernoulli
+  draw, not an implementation fault. Balanced labels give `p_e = 0.5`, so
+  **Kappa 0.56 → INDICATIVE**. Repeated runs reproduce the same output.
+- `harness.py` inserts the repo root on `sys.path`: the file-path invocation
+  otherwise fails with `ModuleNotFoundError: No module named 'app'`.
+
+### Recorded
+- **D-009** in `STATE.md`, plus known gaps: undefined 0.57-0.60 band (folded into
+  `INDICATIVE`), no pytest coverage for the harness, and a module-level RNG that
+  makes `mock_llm_judge` stateful across calls.
+
+### Committed
+- `24ce8c0` — Phase 4: Install aehf and create Kappa smoke test.
+- `harness.py` and this state update are uncommitted.

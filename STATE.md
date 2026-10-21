@@ -81,7 +81,29 @@ suspended (D-005). Phase 4 not started.
   `aehf` also pulls `anthropic` and `typer` into the venv; no eval calls a model
   yet, so calibration is still offline and deterministic.
 
+- **D-009 — Calibration harness: synthetic 25/25 dataset, Bernoulli mock judge.**
+  `evals/calibration/harness.py` generates 50 `FakeDB` instances (odd indices carry
+  two refunds, even indices one, all on `ORD-CAL-001` for 100.00 with two 50.00
+  refunds). `mock_llm_judge` takes `evaluate_trace` as the baseline and inverts it
+  with probability 0.15 from a module-level `random.Random(20261021)`.
+  `run_calibration` scores the pair with `aehf`'s `cohen_kappa` and applies the
+  v2.3 bands. Seed run: **11 of 50 flipped (22%, not 15% — small-sample noise,
+  not a bug)**, balanced 25/25 labels, `p_e = 0.5`, **Kappa 0.56 → INDICATIVE**.
+  Output is stable across repeated runs (verified twice). The module inserts the
+  repo root on `sys.path` because the Auditor's invocation is the file path, not
+  `python -m`; without it `from app.db import FakeDB` raises `ModuleNotFoundError`.
+
 ## Known Gaps
+- **The v2.3 verdict bands leave 0.57 <= Kappa < 0.60 undefined.** The harness
+  folds that gap into `INDICATIVE` (`>= 0.60` audit, `>= 0.43` indicative, else
+  not reportable) rather than reporting a decent score as unclassifiable. The
+  Auditor should confirm the boundary; the code is a threshold, not the spec text.
+- **`harness.py` has no pytest coverage.** It is exercised only by running it, so
+  the 25/25 split, the flip rate and the verdict mapping are unguarded against
+  regression.
+- **`mock_llm_judge` is stateful across calls.** The module-level RNG makes a
+  second call on the same `FakeDB` decide independently, so the function is
+  reproducible per process, not per input.
 - **A1-REFUND-02 is unevaluated.** The policy declares it, but
   `evaluate_a1(db, order_id, order_total)` receives no pre/post order status and
   no `tool_called`, so the checker skips it and can return `PASSED` without
@@ -99,10 +121,10 @@ suspended (D-005). Phase 4 not started.
   numbering rather than the local sequence.
 
 ## Next Actions
-1. User review of `app/agent.py`, the flipped test expectations, and D-007/D-008.
-2. Commit `evals/calibration/` (`eval_judge.py`, `run_aehf.py`), `requirements.txt`,
-   and this state update (all uncommitted).
-3. Build a real LLM judge and a real labeled corpus before any Kappa number is
+1. User review of `harness.py`, D-009, and the 0.57-0.60 band question.
+2. Commit `evals/calibration/harness.py` and this state update (uncommitted).
+3. Add a pytest for the harness (split shape, flip determinism, verdict mapping).
+4. Build a real LLM judge and a real labeled corpus before any Kappa number is
    treated as calibration.
-4. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
+5. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
    before the LLM judge's calibration is treated as complete.
