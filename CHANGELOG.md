@@ -148,4 +148,34 @@
 ### Committed
 - `2698b2e` — Phase 4: Calibration harness with Kappa verdict bands.
 - `evals/certificate.py`, `tests/test_calibration_bands.py`, and the state updates
-  are uncommitted.
+  are uncommitted.## 2026-10-21 — Phase 5: ADVERSE path, certificate sections, Streamlit dashboard
+
+### Added
+- `generate_certificate(..., a1_outcome: bool = True)` — `a1_outcome=False`
+  forces **ADVERSE** over the Kappa band and renders §1.3 as **FAILED**; the
+  label-contradiction `ValueError` still runs first.
+- §1.4 AIUC-1 mapping appendix, §1.6 professional accountability, §1.7 MCP
+  supply-chain attestation.
+- `band_for` is public (was `_band`) so the dashboard passes a consistent label
+  instead of duplicating thresholds.
+- `tests/test_certificate.py` — ADVERSE and CLEAN paths.
+- `dashboard/app.py` — Streamlit UI: Run Calibration button, Kappa metric,
+  Generate Certificate button.
+- `streamlit` 1.66.0 in `.venv` and `requirements.txt`. Streamlit was named in
+  the project stack but had never been installed; the dashboard could not run
+  before this.
+
+### Verified
+- `streamlit.testing.v1.AppTest`: title renders, both buttons present, the
+  calibration click sets the Kappa metric to 0.56, the certificate click renders
+  all seven sections (§1.1-§1.7).
+- `pytest tests/ -q -l` → **9 passed**.
+
+### Recorded
+- **D-011**, superseding D-010's "ADVERSE is unreachable" clause.
+
+### Open
+- Band-derivation edge cases (contradiction `ValueError`, 0.60/0.43 boundaries,
+  §1.2/§1.5 rendered text) remain untested.
+- `dashboard/app.py` has no automated test in the suite; it was exercised with
+  AppTest by hand, not committed as a pytest.

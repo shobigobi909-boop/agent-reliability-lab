@@ -107,15 +107,25 @@ suspended (D-005). Phase 4 not started.
   Section numbering follows the Auditor's brief, which skips §1.4.
   `tests/test_calibration_bands.py` locks the three band outcomes by
   monkeypatching `cohen_kappa` (0.61 / 0.56 / 0.40).
+- **D-011 — ADVERSE becomes reachable; certificate sections 1.4/1.6/1.7 added;
+  Streamlit dashboard is the Phase 5 deliverable.** This supersedes D-010's
+  "ADVERSE is unreachable" clause. `generate_certificate` gained
+  `a1_outcome: bool = True` as a fifth parameter; when it is `False` the §1.1
+  verdict is **ADVERSE** regardless of Kappa, and §1.3 renders both A1 bullets as
+  **FAILED** rather than PASSED — a certificate that said ADVERSE while declaring
+  the invariants PASSED would contradict itself. The Kappa/label contradiction
+  check still runs first. New sections: §1.4 AIUC-1 mapping appendix (partial
+  support, lab taxonomy, not accredited), §1.6 professional accountability
+  (named human signer, no-fee guarantee), §1.7 MCP supply-chain attestation.
+  `band_for` is now public so the dashboard can pass a consistent label instead
+  of duplicating thresholds. `dashboard/app.py` runs the calibration and renders
+  the certificate; it reads Kappa from `st.session_state`, so the two buttons are
+  independent. `tests/test_certificate.py` covers both ADVERSE and CLEAN paths.
 
 ## Known Gaps
-- **The four-state verdict can only emit three states.** **ADVERSE** is reserved
-  for a failed A1 invariant, but `generate_certificate` takes no A1 result — §1.3
-  is a hardcoded PASSED declaration — so ADVERSE is unreachable. Making it real
-  needs an A1 outcome parameter and a §1.3 that renders it.
-- **`evals/certificate.py` has no pytest coverage.** The band derivation, the
-  label-contradiction `ValueError`, and the rendered sections are unverified by
-  the suite.
+- **`evals/certificate.py` band-derivation edge cases remain untested.** The
+  ADVERSE/CLEAN paths are covered; the label-contradiction `ValueError`, the
+  exact 0.60/0.43 boundaries, and the rendered §1.2/§1.5 text are not.
 - **The certificate is Unicode and this console is not.** `—` and `§` print as
   replacement characters under the default Windows code page; running the
   generator needs UTF-8 (`python -X utf8` or `PYTHONIOENCODING=utf-8`). The
