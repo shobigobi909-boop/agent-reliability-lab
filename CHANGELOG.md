@@ -80,3 +80,25 @@
 ### Open
 - `evaluate_trace` inherits the A1-REFUND-02 blind spot; a Cohen's Kappa score
   taken against it does not measure detection of that invariant.
+## 2026-10-21 — Phase 4: aehf Kappa calibration smoke run
+
+### Added
+- `aehf` 0.2.2 to `.venv` and `requirements.txt` (pulls `anthropic`, `typer`,
+  `rich`; no model calls made).
+- `evals/calibration/run_aehf.py` — hardcoded `ground_truth` and
+  `llm_judge_results` (10 labels, 8 agree / 2 disagree) scored with
+  `aehf.judges.calibration.cohen_kappa`; prints `0.6000000000000001`.
+
+### Recorded
+- **D-008**: `import aehf` exposes no Kappa API (only `version` /
+  `PackageNotFoundError`); the function is
+  `aehf.judges.calibration.cohen_kappa(judge, human)`. The module is the only
+  supported entry point, so the script imports the submodule path.
+- The printed 0.6 is a smoke test over simulated labels, not a calibration
+  result.
+
+### Committed earlier this session
+- `91f14dd` — Phase 4 prep: baseline judge wrapper and state updates.
+
+### Test state
+- `pytest tests/ -q` → **4 passed** (re-checked after installing `aehf`).

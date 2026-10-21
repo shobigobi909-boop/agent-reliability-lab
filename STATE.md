@@ -68,6 +68,18 @@ suspended (D-005). Phase 4 not started.
   A1-REFUND-02. Its purpose is to be the fixed reference the future LLM judge is
   graded against through the `aehf` Cohen's Kappa calibration; the LLM judge is
   not trusted until that agreement is measured.
+- **D-008 — `aehf` 0.2.2 pinned the calibration math; its Kappa lives in a
+  submodule, not the top-level package.** `pip install aehf` succeeds
+  (`aehf 0.2.2`, "agent evaluation harness framework"), but `import aehf` exposes
+  only `version` and `PackageNotFoundError` — there is no `aehf.cohen_kappa`.
+  The function is `aehf.judges.calibration.cohen_kappa(judge, human)`, computed
+  from the 2x2 agreement table with `p_e` from the marginals, returning `1.0`
+  when `p_e == 1` and raising `ValueError` on empty input.
+  `evals/calibration/run_aehf.py` therefore imports the submodule path, not the
+  bare package. `aehf` is now in `requirements.txt`. Sanity run: 10 labels with
+  8 agreeing / 2 disagreeing yields `0.6000000000000001`.
+  `aehf` also pulls `anthropic` and `typer` into the venv; no eval calls a model
+  yet, so calibration is still offline and deterministic.
 
 ## Known Gaps
 - **A1-REFUND-02 is unevaluated.** The policy declares it, but
@@ -78,11 +90,19 @@ suspended (D-005). Phase 4 not started.
   `True` for a trace whose only violation is an A1-REFUND-02 transition, because
   its single source of truth is `evaluate_a1`. A Cohen's Kappa score against this
   baseline will not measure the LLM judge's ability to catch A1-REFUND-02.
+- **The Kappa figure is a smoke test, not a calibration result.**
+  `run_aehf.py` scores hardcoded lists; `llm_judge_results` is simulated, not
+  produced by a judge. The 0.6 it prints is floating-point noise around a
+  hand-built table (8/10 agreement, p_e = 0.5) and must never be quoted as
+  evidence that a judge agrees with the baseline.
 - Decision numbering has no D-004 in this file; D-005 follows the Auditor's
   numbering rather than the local sequence.
 
 ## Next Actions
-1. User review of `app/agent.py`, the flipped test expectations, and D-007.
-2. Commit `evals/calibration/eval_judge.py` (still untracked).
-3. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
+1. User review of `app/agent.py`, the flipped test expectations, and D-007/D-008.
+2. Commit `evals/calibration/` (`eval_judge.py`, `run_aehf.py`), `requirements.txt`,
+   and this state update (all uncommitted).
+3. Build a real LLM judge and a real labeled corpus before any Kappa number is
+   treated as calibration.
+4. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
    before the LLM judge's calibration is treated as complete.
