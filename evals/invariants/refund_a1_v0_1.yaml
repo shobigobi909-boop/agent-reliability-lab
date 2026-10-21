@@ -1,0 +1,12 @@
+version: 0.1
+workflow: refund
+invariants:
+  - id: A1-REFUND-01
+    description: An order may be refunded at most once
+    check: "refund_count(order_id) <= 1"
+  - id: A1-REFUND-02
+    description: A refunded order must not transition to refunded again
+    check: "not (pre_status == 'refunded' and post_status == 'refunded' and tool_called == 'issue_refund')"
+  - id: A1-REFUND-03
+    description: Total refunded amount must not exceed order total
+    check: "sum(refund_amounts(order_id)) <= order_total"
