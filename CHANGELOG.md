@@ -122,4 +122,30 @@
 
 ### Committed
 - `24ce8c0` — Phase 4: Install aehf and create Kappa smoke test.
-- `harness.py` and this state update are uncommitted.
+- `harness.py` and this state update are uncommitted.## 2026-10-21 — Phase 5: Audit Certificate generator
+
+### Added
+- `tests/test_calibration_bands.py` — parametrised over Kappa 0.61 / 0.56 / 0.40,
+  monkeypatches `cohen_kappa` and asserts `run_calibration` prints
+  AUDIT-GRADE / INDICATIVE / NOT REPORTABLE.
+- `evals/certificate.py` — `generate_certificate(workflow_name, scope,
+  kappa_score, verdict)` returns Markdown with §1.1 verdict, §1.2 scope, §1.3 A1
+  declaration, §1.5 statistical claims register (D-010). Recomputes the band and
+  raises `ValueError` if the supplied label contradicts the score.
+
+### Observed
+- Default Windows console code page mangles `—` and `§` in the rendered
+  certificate (`�`); the returned string is correct. Sample run needs
+  `python -X utf8`.
+
+### Recorded
+- **D-010** and three new known gaps: ADVERSE is unreachable from this signature,
+  the certificate has no pytest coverage, and the UTF-8 console requirement.
+
+### Test state
+- `pytest tests/ -q -l` → **7 passed**.
+
+### Committed
+- `2698b2e` — Phase 4: Calibration harness with Kappa verdict bands.
+- `evals/certificate.py`, `tests/test_calibration_bands.py`, and the state updates
+  are uncommitted.

@@ -93,7 +93,33 @@ suspended (D-005). Phase 4 not started.
   repo root on `sys.path` because the Auditor's invocation is the file path, not
   `python -m`; without it `from app.db import FakeDB` raises `ModuleNotFoundError`.
 
+- **D-010 — Audit Certificate generator derives the §1.1 verdict from Kappa and
+  refuses contradictions.** `evals/certificate.py::generate_certificate` takes the
+  Kappa score and the caller's band label, recomputes the band with the same
+  thresholds as `harness.py` (`>= 0.60` / `>= 0.43` / else), and raises
+  `ValueError` if the supplied label disagrees — a certificate may not state two
+  different things about one number. Mapping: AUDIT-GRADE → **CLEAN**,
+  INDICATIVE → **QUALIFIED**, NOT REPORTABLE → **DISCLAIMER**. The Auditor's
+  ruling is final: the 0.57-0.60 gap routes to INDICATIVE, and the certificate
+  inherits that. §1.2 names D-005 as the Belay suspension; §1.3 declares
+  A1-REFUND-01 and A1-REFUND-03 PASSED via `evaluate_a1` and states that
+  A1-REFUND-02 is not covered; §1.5 records the exact Kappa and its band label.
+  Section numbering follows the Auditor's brief, which skips §1.4.
+  `tests/test_calibration_bands.py` locks the three band outcomes by
+  monkeypatching `cohen_kappa` (0.61 / 0.56 / 0.40).
+
 ## Known Gaps
+- **The four-state verdict can only emit three states.** **ADVERSE** is reserved
+  for a failed A1 invariant, but `generate_certificate` takes no A1 result — §1.3
+  is a hardcoded PASSED declaration — so ADVERSE is unreachable. Making it real
+  needs an A1 outcome parameter and a §1.3 that renders it.
+- **`evals/certificate.py` has no pytest coverage.** The band derivation, the
+  label-contradiction `ValueError`, and the rendered sections are unverified by
+  the suite.
+- **The certificate is Unicode and this console is not.** `—` and `§` print as
+  replacement characters under the default Windows code page; running the
+  generator needs UTF-8 (`python -X utf8` or `PYTHONIOENCODING=utf-8`). The
+  returned string itself is correct.
 - **The v2.3 verdict bands leave 0.57 <= Kappa < 0.60 undefined.** The harness
   folds that gap into `INDICATIVE` (`>= 0.60` audit, `>= 0.43` indicative, else
   not reportable) rather than reporting a decent score as unclassifiable. The
@@ -121,10 +147,13 @@ suspended (D-005). Phase 4 not started.
   numbering rather than the local sequence.
 
 ## Next Actions
-1. User review of `harness.py`, D-009, and the 0.57-0.60 band question.
-2. Commit `evals/calibration/harness.py` and this state update (uncommitted).
-3. Add a pytest for the harness (split shape, flip determinism, verdict mapping).
-4. Build a real LLM judge and a real labeled corpus before any Kappa number is
+1. User review of `evals/certificate.py`, D-010, and the ADVERSE gap.
+2. Commit `evals/certificate.py`, `tests/test_calibration_bands.py`, and this
+   state update (all uncommitted).
+3. Decide whether `generate_certificate` takes an A1 outcome so ADVERSE becomes
+   reachable, and whether §1.4 is intentionally absent.
+4. Add pytest coverage for `evals/certificate.py`.
+5. Build a real LLM judge and a real labeled corpus before any Kappa number is
    treated as calibration.
-5. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
+6. Decide how A1-REFUND-02 gets its pre/post-state and `tool_called` input
    before the LLM judge's calibration is treated as complete.
