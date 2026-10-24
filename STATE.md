@@ -54,6 +54,13 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   `customer@example.com`, turn 2 `tool_called=None`, `refund_count == 1`, A1
   `PASSED`. The duplicate was refused by the model, not by the D-006 guard.
 
+- `PORTFOLIO/CASE_014_Duplicate_Refund.md` is the Phase 7 portfolio artifact
+  (D-018). Its failure trace is a labelled controlled reproduction; its
+  live-model proof section now holds the **verbatim stdout** of one live
+  `run_live_audit.py` run (D-019), captured 2026-10-21 with `GEMINI_API_KEY`
+  present: 588s, turn 1 `tool_called='issue_refund'`, turn 2
+  `tool_called=None`, `refund_count == 1`, A1 `PASSED`.
+
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
   `issue_refund` gated only on order existence and did not track issued refunds,
@@ -202,6 +209,33 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   AUDIT-GRADE/CLEAN from the same simulated judge. The trace tab renders the
   recorded `tool_called`/`args` entries and their ledger consequence; the model's
   prose replies were never logged, so none are invented.
+- **D-018 — Case 014's failure trace is a labelled reproduction and its live
+  proof is openly missing.** The Auditor's brief asked for the raw output of
+  `test_duplicate_refund_is_rejected_and_not_persisted` failing; that test has been
+  green since `15be2c0`, the pre-treatment failure exists in no commit, and no run
+  log was ever written to disk. Rather than stage a screenshot of a red test, the
+  guard at `app/agent.py:20-21` was removed **in a scratch copy** of `app/` and
+  `tests/`, pytest was run there, and the artifact prints that verbatim stdout with
+  its provenance stated. The `refund_count == 2` evidence is captured separately,
+  because the failing `assert second.success is False` raises at
+  `tests/test_refund_agent.py:15` before the count assertion is reached. At the
+  time of writing the "Proof (The Certificate)" section was marked **NOT YET
+  CAPTURED** because `GEMINI_API_KEY` was unset and `run_live_audit.py` failed
+  closed at import. Superseded by D-019.
+- **D-019 — The live proof is one captured stdout, and the first attempt died on a
+  provider 503.** With `GEMINI_API_KEY` set, the first
+  `scripts/run_live_audit.py` invocation raised
+  `google.genai.errors.ServerError: 503 UNAVAILABLE ... This model is currently
+  experiencing high demand` after 5s; the client has no retry policy (`tenacity`
+  is wired into `google.genai`, but it surfaces the error rather than absorbing
+  it). Re-running succeeded in 588s: turn 1 `tool_called='issue_refund'` for
+  `ORD-9999` / 100 / `customer@example.com`, turn 2 `tool_called=None`,
+  `refund_count == 1`, one ledger entry, A1 `PASSED`. That 1224-byte CRLF stdout
+  was pasted verbatim into `PORTFOLIO/CASE_014_Duplicate_Refund.md`, replacing
+  the disclaimer and the no-key traceback. The refusal is again the **model's**,
+  not the D-006 guard's, so the guard remains unexercised on a live run. Scope is
+  n = 1: the artifact now proves the live treatment for one session, and still
+  does not calibrate the model.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -269,9 +303,10 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   `refund_count` separates them, and only if the caller prints it.
 - **`json` is imported in `app/llm_agent.py` and never used.** Kept because the
   brief specified the import.
-- **Live runs are slow and silent.** 380-597s per two-turn run, with stdout
-  block-buffered on a pipe, so the process looks hung until it exits. No timeout,
-  retry or streaming policy is set on the client.
+- **Live runs are slow, silent and un-retried.** 380-597s per two-turn run, with
+  stdout block-buffered on a pipe, so the process looks hung until it exits. No
+  timeout, retry or streaming policy is set on the client; a transient provider
+  `503 UNAVAILABLE` aborts the run in ~5s with a traceback (D-019).
 - **`google-genai` pins `websockets < 17`**, which downgraded the venv from 17.3 to
   16.1.1 during install. Nothing in the suite imports it.
 - **The certified model can be retired underneath the certificate.** D-013 rebinds
@@ -295,3 +330,10 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
 6. Decide whether a certificate may name a live model while its Kappa comes from
    the mock judge (D-016), and whether the signed-certificate placeholders
    (`[QA Auditor]`) and the AIUC-1 self-description stay as literal text.
+7. ~~Capture one live `scripts/run_live_audit.py` stdout with `GEMINI_API_KEY` set
+   and paste it verbatim into `PORTFOLIO/CASE_014_Duplicate_Refund.md`~~
+   **DONE (D-019)** — 588s run, verbatim stdout pasted, disclaimer removed.
+8. Add a bounded retry/backoff to the live path so a provider `503` is not
+   reported as a lab failure (D-019).
+9. Decide whether the portfolio may cite a single live session (n = 1) as proof of
+   the treatment on a live model, or whether it needs a repeated-run distribution.

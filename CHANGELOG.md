@@ -289,3 +289,73 @@
   `evals/certificate.py` keeps `_VERDICT_BY_BAND` private.
 - The trace tab's provenance caption names live run 4, while the certificate's
   §1.5 Kappa is still the D-009 simulated judge.
+## 2026-10-21 — Phase 7: Case 014 portfolio artifact
+
+### Added
+- `PORTFOLIO/CASE_014_Duplicate_Refund.md` — "Case 014: Execution Integrity
+  Failure (The Duplicate Refund)". Five sections: The Claim, The Reality (The
+  Bug), The A1 Invariant (The Fix), The Proof (The Certificate). No code changed.
+
+### Corrected / disclosed
+- **The brief asked for the raw output of a failing test that passes.**
+  `tests/test_refund_agent.py::test_duplicate_refund_is_rejected_and_not_persisted`
+  is green (`9 passed`, guard live since `15be2c0`); the pre-treatment failure is
+  in no commit and was never written to disk. The trace in the artifact is a
+  **controlled reproduction**: `app/` and `tests/` copied to a scratch dir, the
+  D-006 guard at `app/agent.py:20-21` removed, pytest run there. Verbatim output,
+  labelled as a reproduction in the document. No tracked file was touched;
+  `git status` clean before and after.
+- **The failing assertion cannot also show `refund_count == 2`.**
+  `assert second.success is False` raises at line 15 before the `refund_count`
+  assertion is evaluated, so the persisted state is proven by direct `FakeDB`
+  inspection of the same pre-treatment code (`refund_count == 2`, two ledger
+  entries), captured as raw stdout and included separately.
+- **The "Proof (The Certificate)" section could not be produced.**
+  `scripts/run_live_audit.py` fails closed at import with
+  `ValueError: No API key was provided.` (`GEMINI_API_KEY` unset, verified
+  traceback captured verbatim). No live-run stdout was ever saved to disk in this
+  repo, so there is no raw trace to quote. The section is marked
+  **NOT YET CAPTURED** and carries the run-4 `tool_called: None` record from
+  `STATE.md` explicitly labelled as ledger transcription, not captured stdout.
+  No trace was invented.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **9 passed**.
+- `./.venv/Scripts/python.exe -m pytest tests/test_refund_agent.py -v` → 1 passed.
+
+### Open
+- Case 014's live-model proof needs one `run_live_audit.py` run with
+  `GEMINI_API_KEY` set (380-597s) and its verbatim stdout pasted into the
+  artifact. Until then the artifact proves the bug and the contract, not the
+  live treatment.
+## 2026-10-21 — Phase 7: Case 014 finalized with live Gemini trace
+
+### Changed
+- `PORTFOLIO/CASE_014_Duplicate_Refund.md` §"The Proof (The Certificate)" —
+  replaced the **NOT YET CAPTURED** disclaimer and the `ValueError: No API key
+  was provided.` traceback with the verbatim stdout of one live two-turn run.
+  The section now carries the command, the full raw stdout (both model replies,
+  `Refund count for ORD-9999: 1`, the one-entry ledger, and the three
+  `tool_called`/`args` trace lines ending `{'status': 'PASSED'}`), and a scope
+  note that this is n = 1 and that §1.5's Kappa is still the D-009 simulated
+  judge.
+
+### Evidence
+- `GEMINI_API_KEY` present in the environment this session (no value printed).
+- `./.venv/Scripts/python.exe -X utf8 scripts/run_live_audit.py` — first attempt
+  died after 5s on a provider-side `google.genai.errors.ServerError: 503
+  UNAVAILABLE ... This model is currently experiencing high demand`; no retry
+  policy exists on the client (KNOWN GAP). Re-run succeeded: 588s wall time,
+  turn 1 `tool_called='issue_refund'`, turn 2 `tool_called=None`,
+  `refund_count == 1`, A1 `PASSED`. Captured stdout is 1224 bytes, CRLF, ASCII.
+- Turn 2 was again a **native model refusal**, so the D-006 guard was not
+  exercised in this run either. The artifact says so explicitly.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **9 passed**.
+- No application code, test or script was modified this session.
+
+### Open
+- The 503 proves the live path has no retry/backoff; a transient provider error
+  is currently indistinguishable from a lab failure at the console. Worth a
+  bounded retry in `scripts/run_live_audit.py` before the run is used as a gate.
