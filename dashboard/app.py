@@ -98,139 +98,145 @@ TURN_FINDINGS = {
     ),
 }
 
+PYTEST_SUMMARY = re.compile(r"^=*\s*(\d+ (?:passed|failed|error)[^=\n]*?)\s*=*$")
+
 CUSTOM_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-    --lab-bg: #05070d;
-    --lab-bg-soft: #080b13;
-    --lab-surface: #0b1019;
-    --lab-surface-hi: #111827;
-    --lab-edge: #1b2436;
-    --lab-edge-hi: #2a3654;
-    --lab-text: #e9eef9;
-    --lab-muted: #8c9ab5;
-    --lab-dim: #5d6b85;
-    --lab-accent: #6d7cff;
-    --lab-accent-2: #22d3ee;
-    --lab-pass: #2ee6a8;
-    --lab-fail: #ff5c72;
-    --lab-warn: #f5b544;
-    --lab-radius: 16px;
-    --lab-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-alt: #fbfcfe;
+    --edge: #e3e7ee;
+    --edge-strong: #cfd6e0;
+    --ink: #0d1526;
+    --ink-2: #344054;
+    --ink-3: #5b6a80;
+    --accent: #3d47d8;
+    --accent-soft: #eef0ff;
+    --pass: #087443;
+    --pass-soft: #e8f8f0;
+    --fail: #b42318;
+    --fail-soft: #fdf1f0;
+    --warn: #a35c07;
+    --warn-soft: #fdf6e7;
+    --radius: 14px;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --shadow-sm: 0 1px 2px rgba(13, 21, 38, 0.06), 0 1px 3px rgba(13, 21, 38, 0.04);
+    --shadow-md: 0 8px 24px -12px rgba(13, 21, 38, 0.22);
 }
 
 html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--lab-bg);
-    color: var(--lab-text);
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--bg);
 }
 
 [data-testid="stAppViewContainer"] {
     background:
-        radial-gradient(900px 480px at 8% -8%, rgba(109, 124, 255, 0.16) 0%, rgba(5, 7, 13, 0) 62%),
-        radial-gradient(760px 420px at 96% 4%, rgba(34, 211, 238, 0.10) 0%, rgba(5, 7, 13, 0) 58%),
-        linear-gradient(180deg, #070a12 0%, #05070d 100%);
+        radial-gradient(1200px 420px at 50% -220px, #eaeefb 0%, rgba(245, 246, 248, 0) 70%),
+        var(--bg);
 }
 
 [data-testid="stHeader"] {
     background: transparent;
     border-bottom: none;
+    height: 0;
 }
 
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
-    padding: 2.4rem 3rem 5rem;
-    max-width: 1320px;
+    max-width: 1180px;
+    padding: 2.6rem 2.5rem 5rem;
 }
 
 [data-testid="stAppViewContainer"] h1,
 [data-testid="stAppViewContainer"] h2,
 [data-testid="stAppViewContainer"] h3,
 [data-testid="stAppViewContainer"] h4,
-[data-testid="stAppViewContainer"] h5,
 [data-testid="stAppViewContainer"] p,
 [data-testid="stAppViewContainer"] li,
-[data-testid="stAppViewContainer"] strong {
-    color: var(--lab-text);
-    letter-spacing: -0.011em;
+[data-testid="stAppViewContainer"] strong,
+[data-testid="stAppViewContainer"] span {
+    color: var(--ink);
 }
 
-[data-testid="stCaptionContainer"],
 [data-testid="stCaptionContainer"] p {
-    color: var(--lab-muted) !important;
-    letter-spacing: 0.005em;
+    color: var(--ink-3) !important;
+    font-size: 0.82rem !important;
+    line-height: 1.6;
 }
 
-a { color: #9aa8ff; text-decoration: none; }
-a:hover { color: #c3ccff; text-decoration: underline; }
+a { color: var(--accent); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; }
 
 hr, [data-testid="stDivider"] hr {
-    border-color: var(--lab-edge) !important;
-    margin: 1.4rem 0;
+    border-color: var(--edge) !important;
+    margin: 1.75rem 0;
 }
 
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #080c15 0%, #05070d 100%);
-    border-right: 1px solid var(--lab-edge);
+    background: var(--surface);
+    border-right: 1px solid var(--edge);
 }
 
 [data-testid="stSidebar"] > div:first-child {
-    padding-top: 1.6rem;
+    padding: 2rem 1.25rem 2rem;
 }
 
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] li {
-    color: var(--lab-muted);
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    color: var(--ink-2);
 }
 
 .lab-brand {
     display: flex;
     align-items: center;
     gap: 0.7rem;
-    padding-bottom: 1rem;
-    margin-bottom: 1.1rem;
-    border-bottom: 1px solid var(--lab-edge);
+    padding-bottom: 1.15rem;
+    margin-bottom: 1.4rem;
+    border-bottom: 1px solid var(--edge);
 }
 
 .lab-brand-mark {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
-    background: linear-gradient(140deg, #6d7cff 0%, #22d3ee 100%);
-    box-shadow: 0 10px 26px -12px rgba(109, 124, 255, 0.95);
     display: grid;
     place-items: center;
-    color: #04060c;
+    background: linear-gradient(140deg, #3d47d8 0%, #6b8cff 100%);
+    color: #ffffff;
+    font-size: 0.9rem;
     font-weight: 800;
-    font-size: 0.95rem;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
+    box-shadow: var(--shadow-sm);
 }
 
 .lab-brand-name {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.98rem;
     font-weight: 700;
-    color: var(--lab-text);
-    line-height: 1.15;
+    line-height: 1.2;
+    color: var(--ink) !important;
 }
 
 .lab-brand-sub {
-    margin: 0.1rem 0 0;
-    font-size: 0.72rem;
-    color: var(--lab-dim);
-    letter-spacing: 0.06em;
+    margin: 0.15rem 0 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
+    color: var(--ink-3) !important;
 }
 
 .lab-nav-label {
-    margin: 0 0 0.55rem;
+    margin: 0 0 0.6rem;
     font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: var(--lab-dim);
+    color: var(--ink-3) !important;
 }
 
 .lab-nav-item {
@@ -239,17 +245,18 @@ hr, [data-testid="stDivider"] hr {
     justify-content: space-between;
     gap: 0.5rem;
     padding: 0.55rem 0.7rem;
-    margin-bottom: 0.35rem;
-    border-radius: 10px;
+    margin-bottom: 0.3rem;
+    border-radius: 9px;
     border: 1px solid transparent;
-    color: var(--lab-muted);
-    font-size: 0.85rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--ink-2) !important;
 }
 
 .lab-nav-item.is-active {
-    background: linear-gradient(180deg, #131b2e 0%, #0d1422 100%);
-    border-color: #24304a;
-    color: var(--lab-text);
+    background: var(--accent-soft);
+    border-color: #d5dbfb;
+    color: var(--accent) !important;
     font-weight: 600;
 }
 
@@ -258,70 +265,80 @@ hr, [data-testid="stDivider"] hr {
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.42rem 0;
-    border-bottom: 1px dashed rgba(27, 36, 54, 0.9);
-    font-size: 0.78rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eef1f6;
+    font-size: 0.82rem;
 }
 
 .lab-kv:last-child { border-bottom: none; }
-.lab-kv span:first-child { color: var(--lab-dim); }
+.lab-kv span:first-child { color: var(--ink-3) !important; }
 .lab-kv span:last-child {
-    color: var(--lab-text);
-    font-family: var(--lab-mono);
-    font-size: 0.74rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--ink) !important;
 }
 
 .lab-side-foot {
-    margin-top: 1.2rem;
-    padding-top: 0.9rem;
-    border-top: 1px solid var(--lab-edge);
-    color: var(--lab-dim);
-    font-size: 0.7rem;
-    line-height: 1.5;
+    margin-top: 1.4rem;
+    padding: 0.85rem 0.9rem;
+    border-radius: 10px;
+    background: var(--surface-alt);
+    border: 1px solid var(--edge);
+    font-size: 0.76rem;
+    line-height: 1.65;
+    color: var(--ink-3) !important;
 }
 
 .lab-hero {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: 2rem;
     flex-wrap: wrap;
-    padding-bottom: 1.4rem;
-    margin-bottom: 1.4rem;
-    border-bottom: 1px solid var(--lab-edge);
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--edge);
 }
 
 .lab-eyebrow {
-    margin: 0 0 0.5rem;
-    font-size: 0.7rem;
+    margin: 0 0 0.55rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--lab-accent);
+    color: var(--accent) !important;
 }
 
 .lab-title {
     margin: 0;
-    font-size: 2.15rem;
+    font-size: 2.45rem;
     font-weight: 800;
     letter-spacing: -0.035em;
     line-height: 1.08;
-    background: linear-gradient(96deg, #ffffff 0%, #c3ccff 52%, #7ee7f5 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--ink) !important;
 }
 
 .lab-subtitle {
-    margin: 0.55rem 0 0;
-    font-size: 0.95rem;
-    color: var(--lab-muted);
-    max-width: 58ch;
+    margin: 0.7rem 0 0;
+    font-size: 1.02rem;
+    line-height: 1.65;
+    color: var(--ink-2) !important;
+    max-width: 62ch;
+}
+
+.lab-tab-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.55rem;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    color: var(--ink) !important;
 }
 
 .lab-chips {
     display: flex;
-    gap: 0.45rem;
+    align-items: center;
+    gap: 0.4rem;
     flex-wrap: wrap;
 }
 
@@ -329,63 +346,68 @@ hr, [data-testid="stDivider"] hr {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.34rem 0.66rem;
+    padding: 0.32rem 0.66rem;
     border-radius: 999px;
-    border: 1px solid var(--lab-edge);
-    background: rgba(13, 18, 30, 0.9);
-    color: var(--lab-muted);
-    font-size: 0.73rem;
+    border: 1px solid var(--edge-strong);
+    background: var(--surface);
+    font-size: 0.78rem;
     font-weight: 500;
+    color: var(--ink-2) !important;
     white-space: nowrap;
 }
 
 .lab-chip strong {
-    color: var(--lab-text);
-    font-weight: 600;
+    font-weight: 650;
+    color: var(--ink) !important;
+}
+
+.lab-chip.lab-mono {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    color: var(--ink-2) !important;
 }
 
 .lab-dot {
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    display: inline-block;
-    background: var(--lab-dim);
+    background: var(--edge-strong);
 }
 
-.lab-dot.is-live { background: var(--lab-pass); box-shadow: 0 0 0 4px rgba(46, 230, 168, 0.14); }
-.lab-dot.is-warn { background: var(--lab-warn); box-shadow: 0 0 0 4px rgba(245, 181, 68, 0.14); }
-.lab-dot.is-fail { background: var(--lab-fail); box-shadow: 0 0 0 4px rgba(255, 92, 114, 0.14); }
+.lab-dot.is-live { background: var(--pass); }
+.lab-dot.is-warn { background: #dc9b16; }
+.lab-dot.is-fail { background: var(--fail); }
 
 [data-testid="stTabs"] div[data-baseweb="tab-list"] {
-    gap: 0.3rem;
-    background: rgba(9, 13, 22, 0.92);
-    border: 1px solid var(--lab-edge);
-    border-radius: 14px;
-    padding: 0.32rem;
+    gap: 0.25rem;
+    padding: 0.3rem;
     width: fit-content;
     max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--edge);
+    background: #eceff4;
 }
 
 [data-testid="stTabs"] button[role="tab"] {
+    padding: 0.5rem 1.1rem;
     border: none;
+    border-radius: 9px;
     background: transparent;
-    border-radius: 10px;
-    padding: 0.5rem 1.05rem;
-    color: var(--lab-muted) !important;
+    font-size: 0.88rem;
     font-weight: 600;
-    font-size: 0.86rem;
-    transition: background 0.16s ease, color 0.16s ease;
+    color: var(--ink-3) !important;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 [data-testid="stTabs"] button[role="tab"]:hover {
-    background: rgba(29, 40, 63, 0.55);
-    color: var(--lab-text) !important;
+    color: var(--ink) !important;
+    background: rgba(255, 255, 255, 0.7);
 }
 
 [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
-    background: linear-gradient(180deg, #1a2540 0%, #131b2d 100%);
-    color: #ffffff !important;
-    box-shadow: inset 0 0 0 1px #2b3856;
+    background: var(--surface);
+    color: var(--ink) !important;
+    box-shadow: var(--shadow-sm);
 }
 
 [data-testid="stTabs"] div[data-baseweb="tab-highlight"],
@@ -394,7 +416,7 @@ hr, [data-testid="stDivider"] hr {
 }
 
 [data-testid="stTabs"] div[role="tabpanel"] {
-    padding-top: 1.25rem;
+    padding-top: 1.4rem;
 }
 
 .st-key-metric-a1,
@@ -410,32 +432,18 @@ hr, [data-testid="stDivider"] hr {
 }
 
 .lab-card {
-    position: relative;
     height: 100%;
-    padding: 1.25rem 1.35rem 1.3rem;
-    border-radius: var(--lab-radius);
-    border: 1px solid var(--lab-edge);
-    background:
-        radial-gradient(120% 140% at 100% 0%, rgba(109, 124, 255, 0.10) 0%, rgba(11, 16, 25, 0) 55%),
-        linear-gradient(168deg, #0e1524 0%, #0a0f1a 100%);
-    box-shadow: 0 22px 44px -34px rgba(0, 0, 0, 0.95);
-    overflow: hidden;
-    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.lab-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 2px;
-    background: linear-gradient(90deg, rgba(109, 124, 255, 0) 0%, var(--lab-accent) 45%, rgba(34, 211, 238, 0.9) 100%);
-    opacity: 0.85;
+    padding: 1.35rem 1.45rem 1.4rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--edge);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.16s ease, transform 0.16s ease;
 }
 
 .lab-card:hover {
-    transform: translateY(-2px);
-    border-color: #2a3654;
-    box-shadow: 0 30px 60px -40px rgba(109, 124, 255, 0.75);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .lab-card-head {
@@ -443,484 +451,240 @@ hr, [data-testid="stDivider"] hr {
     align-items: center;
     justify-content: space-between;
     gap: 0.6rem;
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.95rem;
 }
 
 .lab-card-label {
     margin: 0;
-    color: var(--lab-muted) !important;
-    font-size: 0.69rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
+    color: var(--ink-3) !important;
 }
 
 .lab-card-badge {
-    font-family: var(--lab-mono);
-    font-size: 0.66rem;
-    color: var(--lab-dim);
-    border: 1px solid var(--lab-edge);
+    padding: 0.12rem 0.4rem;
     border-radius: 6px;
-    padding: 0.1rem 0.35rem;
-    background: rgba(5, 7, 13, 0.6);
+    border: 1px solid var(--edge);
+    background: var(--surface-alt);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--ink-3) !important;
 }
 
 .lab-card-value {
     margin: 0;
-    font-size: 2rem;
+    font-size: 2.4rem;
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.05;
+    letter-spacing: -0.045em;
+    line-height: 1.02;
     font-variant-numeric: tabular-nums;
 }
 
 .lab-card-meta {
-    margin: 0.6rem 0 0;
-    color: var(--lab-muted) !important;
-    font-size: 0.775rem;
-    line-height: 1.45;
+    margin: 0.7rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--ink-3) !important;
 }
 
-.lab-pass { color: var(--lab-pass) !important; }
-.lab-fail { color: var(--lab-fail) !important; }
-.lab-warn { color: var(--lab-warn) !important; }
-.lab-wait { color: var(--lab-dim) !important; }
+.lab-pass { color: var(--pass) !important; }
+.lab-fail { color: var(--fail) !important; }
+.lab-warn { color: var(--warn) !important; }
+.lab-wait { color: var(--ink-3) !important; }
 
 [data-testid="stButton"] > button,
 [data-testid="stDownloadButton"] > button {
-    border-radius: 11px;
-    border: 1px solid var(--lab-edge);
-    background: linear-gradient(180deg, #131b2b 0%, #0d1420 100%);
-    color: var(--lab-text);
+    border-radius: 10px;
+    border: 1px solid var(--edge-strong);
+    background: var(--surface);
+    color: var(--ink) !important;
+    font-size: 0.88rem;
     font-weight: 600;
-    font-size: 0.85rem;
-    padding: 0.5rem 1.05rem;
-    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    padding: 0.55rem 1.1rem;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, background 0.15s ease;
 }
 
 [data-testid="stButton"] > button:hover,
 [data-testid="stDownloadButton"] > button:hover {
-    border-color: #33425f;
-    background: linear-gradient(180deg, #182238 0%, #101828 100%);
+    background: #f8f9fc;
+    box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
-    color: #ffffff;
+    color: var(--ink) !important;
 }
 
 [data-testid="stButton"] > button[kind="primary"],
 [data-testid="stDownloadButton"] > button[kind="primary"] {
-    background: linear-gradient(135deg, #5563ff 0%, #7b5cff 55%, #4f8dff 100%);
     border: none;
-    color: #ffffff;
-    box-shadow: 0 16px 34px -18px rgba(109, 124, 255, 0.95);
+    background: linear-gradient(135deg, #3d47d8 0%, #5561ea 100%);
+    color: #ffffff !important;
+    box-shadow: 0 6px 16px -6px rgba(61, 71, 216, 0.55);
 }
 
 [data-testid="stButton"] > button[kind="primary"]:hover,
 [data-testid="stDownloadButton"] > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #6470ff 0%, #8a6bff 55%, #5b97ff 100%);
-    box-shadow: 0 20px 40px -18px rgba(109, 124, 255, 1);
+    background: linear-gradient(135deg, #3540c9 0%, #4a57e0 100%);
+    box-shadow: 0 10px 22px -8px rgba(61, 71, 216, 0.6);
 }
 
 [data-testid="stButton"] > button:focus-visible,
-[data-testid="stDownloadButton"] > button:focus-visible {
-    outline: 2px solid var(--lab-accent);
+[data-testid="stDownloadButton"] > button:focus-visible,
+[data-testid="stSelectbox"] div[data-baseweb="select"]:focus-visible {
+    outline: 3px solid rgba(61, 71, 216, 0.35);
     outline-offset: 2px;
-}
-
-.lab-panel {
-    border: 1px solid var(--lab-edge);
-    border-radius: var(--lab-radius);
-    background: linear-gradient(168deg, #0c1220 0%, #080c14 100%);
-    padding: 1.15rem 1.25rem;
-    margin-bottom: 1rem;
-}
-
-.lab-panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.lab-panel-title {
-    margin: 0;
-    font-size: 0.98rem;
-    font-weight: 700;
-    color: var(--lab-text);
-}
-
-.lab-panel-sub {
-    margin: 0.2rem 0 0;
-    font-size: 0.78rem;
-    color: var(--lab-muted);
-}
-
-.lab-mono {
-    font-family: var(--lab-mono);
-    font-size: 0.76rem;
-    color: #9fb0d0;
-}
-
-.lab-pipeline {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    flex-wrap: wrap;
-    margin: 0.95rem 0 0;
-}
-
-.lab-step {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.35rem 0.7rem;
-    border-radius: 9px;
-    border: 1px solid var(--lab-edge);
-    background: rgba(9, 13, 22, 0.85);
-    color: var(--lab-muted);
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.lab-step-num {
-    font-family: var(--lab-mono);
-    font-size: 0.66rem;
-    color: var(--lab-dim);
-    border-right: 1px solid var(--lab-edge);
-    padding-right: 0.45rem;
-}
-
-.lab-step.is-done {
-    border-color: rgba(46, 230, 168, 0.35);
-    background: rgba(46, 230, 168, 0.07);
-    color: #b8f5df;
-}
-
-.lab-step.is-active {
-    border-color: rgba(109, 124, 255, 0.5);
-    background: rgba(109, 124, 255, 0.12);
-    color: #d7dcff;
-}
-
-.lab-step.is-fail {
-    border-color: rgba(255, 92, 114, 0.4);
-    background: rgba(255, 92, 114, 0.1);
-    color: #ffd0d6;
-}
-
-.lab-arrow {
-    color: var(--lab-dim);
-    font-size: 0.8rem;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) {
-    border: 1px solid var(--lab-edge);
-    border-radius: var(--lab-radius);
-    background: linear-gradient(180deg, #0a0f1a 0%, #070b13 100%);
-    padding: 0.4rem 1.6rem 1.4rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] h1 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    margin: 1.3rem 0 0.8rem;
-    padding-bottom: 0.6rem;
-    border-bottom: 1px solid var(--lab-edge);
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] h2 {
-    font-size: 1.02rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    color: #a9b8ff !important;
-    margin: 1.5rem 0 0.7rem;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] h3 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #c8d3ea !important;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] p,
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] li {
-    font-size: 0.9rem;
-    line-height: 1.68;
-    color: #cfd8ea;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] blockquote {
-    border-left: 2px solid var(--lab-accent);
-    background: rgba(109, 124, 255, 0.07);
-    border-radius: 0 10px 10px 0;
-    padding: 0.7rem 1rem;
-    margin: 0.9rem 0;
-    color: #dfe6f7;
-    font-style: normal;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.82rem;
-    margin: 1rem 0;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] th {
-    background: #0e1523;
-    color: #a9b8ff;
-    text-align: left;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.5rem 0.7rem;
-    border-bottom: 1px solid var(--lab-edge);
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] td {
-    padding: 0.5rem 0.7rem;
-    border-bottom: 1px solid rgba(27, 36, 54, 0.8);
-    color: #cfd8ea;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] code {
-    font-family: var(--lab-mono);
-    font-size: 0.78rem;
-    background: rgba(109, 124, 255, 0.12);
-    color: #c7d0ff;
-    border-radius: 5px;
-    padding: 0.1rem 0.32rem;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] pre code {
-    background: transparent;
-    color: inherit;
-    padding: 0;
-}
-
-:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] pre {
-    background: #060910 !important;
-    border: 1px solid var(--lab-edge);
-    border-radius: 11px;
-    padding: 0.9rem 1rem;
-    font-size: 0.78rem;
-    line-height: 1.6;
-}
-
-.st-key-terminal {
-    border: 1px solid var(--lab-edge);
-    border-radius: 14px;
-    background: #060910;
-    overflow: hidden;
-    box-shadow: 0 24px 50px -40px rgba(0, 0, 0, 1);
-}
-
-.st-key-terminal [data-testid="stVerticalBlock"] { gap: 0 !important; }
-.st-key-terminal [data-testid="stCode"] { margin: 0 !important; }
-
-.st-key-terminal [data-testid="stCode"] pre,
-.st-key-terminal .stCode pre {
-    background: #060910 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 0.95rem 1.1rem 1.15rem !important;
-    font-family: var(--lab-mono);
-    font-size: 0.79rem;
-    line-height: 1.62;
-    color: #c8d3ea;
-}
-
-.lab-term-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.6rem 0.9rem;
-    background: linear-gradient(180deg, #0d1420 0%, #090e18 100%);
-    border-bottom: 1px solid var(--lab-edge);
-}
-
-.lab-term-dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.lab-term-dot.r { background: #ff5f57; }
-.lab-term-dot.y { background: #febc2e; }
-.lab-term-dot.g { background: #28c840; }
-
-.lab-term-title {
-    margin-left: 0.6rem;
-    font-family: var(--lab-mono);
-    font-size: 0.73rem;
-    color: var(--lab-dim);
-}
-
-.lab-term-status {
-    margin-left: auto;
-    font-family: var(--lab-mono);
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.lab-term-status.is-pass { color: var(--lab-pass); }
-.lab-term-status.is-fail { color: var(--lab-fail); }
-
-[data-testid="stAlert"] {
-    border-radius: 12px;
-    border: 1px solid var(--lab-edge);
-    background: rgba(12, 18, 30, 0.92);
-}
-
-[data-testid="stAlert"] p {
-    font-size: 0.85rem;
-}
-
-[data-testid="stChatMessage"] {
-    background: linear-gradient(180deg, #0d1421 0%, #090e18 100%);
-    border: 1px solid var(--lab-edge);
-    border-radius: 14px;
-    padding: 0.35rem 0.6rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"] {
-    border: 1px solid var(--lab-edge);
 }
 
 [data-testid="stSelectbox"] label p {
     font-size: 0.72rem !important;
     font-weight: 700;
-    letter-spacing: 0.13em;
+    letter-spacing: 0.11em;
     text-transform: uppercase;
-    color: var(--lab-dim) !important;
+    color: var(--ink-3) !important;
+    margin-bottom: 0.35rem;
 }
 
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-    background: #0c1220;
-    border: 1px solid var(--lab-edge);
-    border-radius: 11px;
-    color: var(--lab-text);
-    font-size: 0.88rem;
+    min-height: 46px;
+    border: 1px solid var(--edge-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ink) !important;
+    box-shadow: var(--shadow-sm);
 }
 
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
-    border-color: #33425f;
+    border-color: #b8c2d1;
 }
 
 [data-baseweb="popover"] div[role="listbox"] {
-    background: #0b1019;
-    border: 1px solid var(--lab-edge);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    box-shadow: var(--shadow-md);
 }
 
 [data-baseweb="popover"] li[role="option"] {
-    color: var(--lab-muted);
-    font-size: 0.86rem;
+    font-size: 0.9rem;
+    padding: 0.55rem 0.75rem;
+    color: var(--ink-2) !important;
 }
 
 [data-baseweb="popover"] li[role="option"]:hover {
-    background: #141d2f;
-    color: var(--lab-text);
-}
-
-[data-testid="stSpinner"] p {
-    color: var(--lab-muted) !important;
-    font-size: 0.82rem;
-}
-
-[data-testid="stDownloadButton"] {
-    margin-top: 0.6rem;
-}
-
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #05070d; }
-::-webkit-scrollbar-thumb {
-    background: #1e2a40;
-    border-radius: 8px;
-    border: 2px solid #05070d;
-}
-::-webkit-scrollbar-thumb:hover { background: #2b3a56; }
-
-.lab-tab-title {
-    margin: 0 0 1.05rem;
-    font-size: 1.45rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--lab-text);
+    background: var(--accent-soft);
+    color: var(--ink) !important;
 }
 
 .lab-strip {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
     flex-wrap: wrap;
-    margin: 1rem 0 0.9rem;
+    margin: 1.15rem 0 0.85rem;
+}
+
+.lab-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1.15rem 1.35rem;
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.lab-panel-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink) !important;
+}
+
+.lab-panel-sub {
+    margin: 0.25rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--ink-3) !important;
+}
+
+.lab-mono {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-2) !important;
 }
 
 .lab-sec-label {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    margin: 0 0 0.9rem;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.16em;
+    gap: 0.65rem;
+    margin: 0 0 1.05rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--lab-accent);
+    color: var(--accent) !important;
 }
 
-.lab-sec-label::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, var(--lab-edge) 0%, rgba(27, 36, 54, 0) 100%);
+.lab-sec-num {
+    display: inline-grid;
+    place-items: center;
+    min-width: 26px;
+    height: 22px;
+    padding: 0 0.35rem;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    border: 1px solid #d8ddfb;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--accent) !important;
 }
 
 .st-key-case-preamble,
 [class*="st-key-case-section-"] {
-    border: 1px solid var(--lab-edge);
-    border-radius: var(--lab-radius);
-    background: linear-gradient(168deg, #0b111d 0%, #080c15 100%);
-    padding: 1.65rem 1.9rem 1.35rem;
-    margin-bottom: 1.15rem;
-    box-shadow: 0 22px 46px -42px rgba(0, 0, 0, 0.95);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 1.75rem 2rem 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .st-key-case-preamble {
-    background:
-        radial-gradient(120% 130% at 0% 0%, rgba(109, 124, 255, 0.10) 0%, rgba(11, 17, 29, 0) 55%),
-        linear-gradient(168deg, #0c1424 0%, #080c15 100%);
+    border-top: 3px solid var(--accent);
+    background: linear-gradient(180deg, #fbfcff 0%, var(--surface) 42%);
 }
 
 .st-key-case-preamble [data-testid="stMarkdownContainer"] h1 {
-    margin: 0 0 0.85rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--lab-edge);
-    font-size: 1.42rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--edge);
+    font-size: 1.6rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1.25;
-    color: #ffffff;
+    color: var(--ink) !important;
 }
 
 .st-key-case-preamble [data-testid="stMarkdownContainer"] p,
-.st-key-case-preamble [data-testid="stMarkdownContainer"] li,
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] p,
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] li {
-    font-size: 0.96rem;
-    line-height: 1.85;
-    color: #d6deee;
+    font-size: 1rem;
+    line-height: 1.78;
+    color: #1b2638 !important;
     margin-bottom: 1.05rem;
-    max-width: 80ch;
+    max-width: 74ch;
+}
+
+.st-key-case-preamble [data-testid="stMarkdownContainer"] p {
+    font-size: 0.94rem;
+    line-height: 1.7;
 }
 
 .st-key-case-preamble [data-testid="stMarkdownContainer"] p:last-child,
@@ -931,116 +695,259 @@ hr, [data-testid="stDivider"] hr {
 
 .st-key-case-preamble [data-testid="stMarkdownContainer"] strong,
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] strong {
-    color: #ffffff;
-    font-weight: 600;
+    font-weight: 650;
+    color: var(--ink) !important;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] h2 {
-    margin: 1.5rem 0 0.7rem;
-    font-size: 1.02rem;
+    margin: 1.6rem 0 0.7rem;
+    font-size: 1.05rem;
     font-weight: 700;
     letter-spacing: 0.01em;
-    color: #a9b8ff !important;
+    color: var(--ink) !important;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] h3 {
-    margin: 1.2rem 0 0.5rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #c8d3ea !important;
+    margin: 1.3rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 650;
+    color: var(--ink) !important;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] blockquote {
-    margin: 1.1rem 0;
-    padding: 0.85rem 1.15rem;
-    border-left: 2px solid var(--lab-accent);
+    margin: 1.15rem 0;
+    padding: 0.9rem 1.2rem;
+    border-left: 3px solid var(--accent);
     border-radius: 0 10px 10px 0;
-    background: rgba(109, 124, 255, 0.07);
-    color: #e3eafa;
+    background: var(--accent-soft);
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] blockquote p {
     margin-bottom: 0;
-    font-size: 0.98rem;
-    line-height: 1.8;
+    font-size: 1.02rem;
+    line-height: 1.7;
+    color: #1b2638 !important;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] table {
     width: 100%;
-    border-collapse: collapse;
-    margin: 1.2rem 0;
-    font-size: 0.84rem;
+    margin: 1.25rem 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.88rem;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] th {
-    padding: 0.55rem 0.75rem;
-    background: #0e1523;
-    border-bottom: 1px solid var(--lab-edge);
-    color: #a9b8ff;
-    font-size: 0.72rem;
+    padding: 0.6rem 0.8rem;
+    background: #f5f7fb;
+    border-bottom: 1px solid var(--edge);
+    font-size: 0.74rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.07em;
     text-align: left;
     text-transform: uppercase;
+    color: var(--ink-2) !important;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] td {
-    padding: 0.55rem 0.75rem;
-    border-bottom: 1px solid rgba(27, 36, 54, 0.8);
-    color: #cfd8ea;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid #eef1f6;
+    color: #1b2638 !important;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] tr:last-child td {
+    border-bottom: none;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] code {
-    padding: 0.12rem 0.36rem;
+    padding: 0.12rem 0.38rem;
     border-radius: 5px;
-    background: rgba(109, 124, 255, 0.12);
-    color: #c7d0ff;
-    font-family: var(--lab-mono);
-    font-size: 0.8rem;
+    background: var(--accent-soft);
+    color: #2b34b5 !important;
+    font-family: var(--mono);
+    font-size: 0.84rem;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] pre {
-    margin: 1.1rem 0;
-    padding: 0.95rem 1.1rem;
-    border: 1px solid var(--lab-edge);
-    border-radius: 11px;
-    background: #060910 !important;
-    font-size: 0.79rem;
-    line-height: 1.65;
+    margin: 1.15rem 0;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    background: #f7f9fc !important;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    overflow-x: auto;
 }
 
 [class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] pre code {
     padding: 0;
     background: transparent;
-    color: inherit;
-    font-size: 0.79rem;
+    color: #1b2638 !important;
+    font-size: 0.82rem;
+}
+
+:is(.st-key-doc-pane, .st-key-cert-doc-pane) {
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 1.75rem 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.3;
+    color: var(--ink) !important;
+}
+
+:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] h2 {
+    margin: 1.7rem 0 0.7rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--edge);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink) !important;
+}
+
+:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] p,
+:is(.st-key-doc-pane, .st-key-cert-doc-pane) [data-testid="stMarkdownContainer"] li {
+    font-size: 0.98rem;
+    line-height: 1.78;
+    color: #1b2638 !important;
+    max-width: 74ch;
+}
+
+[data-testid="stAlert"] {
+    border-radius: 11px;
+    border: 1px solid var(--edge);
+    padding: 0.85rem 1.1rem;
+}
+
+[data-testid="stAlert"] p {
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+[data-testid="stChatMessage"] {
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-testid="stChatMessage"] p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #1b2638 !important;
 }
 
 [data-testid="stExpander"] {
-    border: 1px solid var(--lab-edge) !important;
-    border-radius: 12px !important;
-    background: #080c14 !important;
+    border: 1px solid var(--edge) !important;
+    border-radius: 11px !important;
+    background: var(--surface) !important;
     overflow: hidden;
 }
 
 [data-testid="stExpander"] summary {
-    padding: 0.55rem 1rem;
+    padding: 0.7rem 1rem;
 }
 
 [data-testid="stExpander"] summary p {
-    font-size: 0.82rem !important;
+    font-size: 0.86rem !important;
     font-weight: 600;
-    color: var(--lab-muted) !important;
-    letter-spacing: 0.01em;
+    color: var(--ink-2) !important;
 }
 
 [data-testid="stExpander"] summary:hover p {
-    color: var(--lab-text) !important;
+    color: var(--accent) !important;
 }
 
 [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
     padding: 0 0.85rem 0.85rem;
 }
+
+.st-key-terminal {
+    border-radius: 10px;
+    background: #0b1220;
+    overflow: hidden;
+}
+
+.st-key-terminal [data-testid="stVerticalBlock"] { gap: 0 !important; }
+.st-key-terminal [data-testid="stCode"] { margin: 0 !important; }
+
+.st-key-terminal [data-testid="stCode"] pre,
+.st-key-terminal .stCode pre {
+    margin: 0 !important;
+    padding: 1rem 1.15rem 1.2rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #0b1220 !important;
+    font-family: var(--mono);
+    font-size: 0.84rem;
+    line-height: 1.7;
+    color: #e4ebf7 !important;
+}
+
+.lab-term-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 0.95rem;
+    background: #131c2e;
+    border-bottom: 1px solid #1f2b42;
+}
+
+.lab-term-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+.lab-term-dot.r { background: #ff6b6b; }
+.lab-term-dot.y { background: #f4c150; }
+.lab-term-dot.g { background: #3ddc97; }
+
+.lab-term-title {
+    margin-left: 0.55rem;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: #9fb0cc !important;
+}
+
+.lab-term-status {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.lab-term-status.is-pass { color: #3ddc97 !important; }
+.lab-term-status.is-fail { color: #ff8b8b !important; }
+
+[data-testid="stSpinner"] p {
+    font-size: 0.86rem;
+    color: var(--ink-2) !important;
+}
+
+[data-testid="stDownloadButton"] {
+    margin-top: 0.85rem;
+}
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: #eef1f6; }
+::-webkit-scrollbar-thumb {
+    background: #c3ccda;
+    border: 3px solid #eef1f6;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: #a9b4c6; }
 </style>
 """
 
@@ -1108,6 +1015,14 @@ def run_audit() -> dict:
     }
 
 
+def pytest_summary(output: str) -> str:
+    for line in output.splitlines():
+        match = PYTEST_SUMMARY.match(line.strip())
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
 def metric_card(
     key: str,
     label: str,
@@ -1128,18 +1043,6 @@ def metric_card(
             "</div>",
             unsafe_allow_html=True,
         )
-
-
-def panel_head(title: str, sub: str, chips: str = "") -> None:
-    chip_markup = f'<div class="lab-chips">{chips}</div>' if chips else ""
-    st.markdown(
-        '<div class="lab-panel-head">'
-        f'<div><p class="lab-panel-title">{title}</p>'
-        f'<p class="lab-panel-sub">{sub}</p></div>'
-        f"{chip_markup}"
-        "</div>",
-        unsafe_allow_html=True,
-    )
 
 
 def split_case_document(text: str) -> tuple[str, list[tuple[str, str]]]:
@@ -1185,7 +1088,11 @@ def render_case_document(text: str) -> None:
 
     for index, (heading, body) in enumerate(sections, start=1):
         with st.container(key=f"case-section-{index}", border=False):
-            st.markdown(f'<p class="lab-sec-label">{heading}</p>', unsafe_allow_html=True)
+            st.markdown(
+                '<p class="lab-sec-label">'
+                f'<span class="lab-sec-num">{index:02d}</span>{heading}</p>',
+                unsafe_allow_html=True,
+            )
             st.markdown(body)
 
 
@@ -1200,7 +1107,7 @@ with st.sidebar:
         '<div class="lab-brand-mark">AR</div>'
         "<div>"
         '<p class="lab-brand-name">Reliability Lab</p>'
-        '<p class="lab-brand-sub">Agent Audit Platform</p>'
+        '<p class="lab-brand-sub">Agent audit platform</p>'
         "</div>"
         "</div>",
         unsafe_allow_html=True,
@@ -1208,22 +1115,19 @@ with st.sidebar:
 
     st.markdown('<p class="lab-nav-label">Surfaces</p>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="lab-nav-item is-active">'
-        "<span>Live audit</span><span class=\"lab-chip\">Replay</span>"
-        "</div>"
-        '<div class="lab-nav-item">'
-        f"<span>Portfolio hub</span><span class=\"lab-chip\">{len(CASES)} cases</span>"
-        "</div>"
-        '<div class="lab-nav-item">'
-        "<span>Certificates</span><span class=\"lab-chip\">§1.1-§1.7</span>"
-        "</div>",
+        '<div class="lab-nav-item is-active"><span>Live audit</span>'
+        '<span class="lab-chip">Replay</span></div>'
+        '<div class="lab-nav-item"><span>Portfolio hub</span>'
+        f'<span class="lab-chip">{len(CASES)} cases</span></div>'
+        '<div class="lab-nav-item"><span>Certificates</span>'
+        '<span class="lab-chip">§1.1-§1.7</span></div>',
         unsafe_allow_html=True,
     )
 
     st.markdown('<p class="lab-nav-label">Session</p>', unsafe_allow_html=True)
     st.markdown(
         '<div class="lab-kv"><span>Workflow</span><span>Gemini Agent</span></div>'
-        f'<div class="lab-kv"><span>Order</span><span>{ORDER_ID}</span></div>'
+        '<div class="lab-kv"><span>Order</span><span>ORD-9999</span></div>'
         '<div class="lab-kv"><span>Model</span><span>3.8-flash</span></div>'
         '<div class="lab-kv"><span>Evidence</span><span>n = 1</span></div>'
         '<div class="lab-kv"><span>Mode</span><span>Offline replay</span></div>',
@@ -1243,11 +1147,11 @@ st.markdown(
     "<div>"
     '<p class="lab-eyebrow">AI governance platform</p>'
     '<p class="lab-title">Agent Reliability Audit Lab</p>'
-    '<p class="lab-subtitle">Statistical certification and failure-case portfolio '
+    '<p class="lab-subtitle">Statistical certification and a failure-case portfolio '
     "for autonomous agents — one invariant, one test, one verdict per workflow.</p>"
     "</div>"
     '<div class="lab-chips">'
-    '<span class="lab-chip"><span class="lab-dot is-live"></span>Environment · local</span>'
+    '<span class="lab-chip"><span class="lab-dot is-live"></span>Local environment</span>'
     '<span class="lab-chip"><strong>5</strong> cases audited</span>'
     '<span class="lab-chip">Kappa bands <strong>v2.3</strong></span>'
     "</div>"
@@ -1260,25 +1164,26 @@ live_tab, portfolio_tab = st.tabs(["Live Audit", "Portfolio Case Studies"])
 with live_tab:
     audit = st.session_state.audit
 
-    with st.container(key="live-controls", border=False):
-        left, right = st.columns([1, 2], vertical_alignment="center")
-        with left:
-            run_clicked = st.button(
-                "Run Live Audit",
-                type="primary",
-                width="stretch",
-                icon=":material/play_arrow:",
-                key="run_live_audit",
-            )
-        with right:
-            st.markdown(
-                '<div class="lab-chips">'
-                '<span class="lab-chip"><span class="lab-dot is-live"></span>Trace recorded</span>'
-                '<span class="lab-chip">A1 · <strong>REFUND</strong></span>'
-                '<span class="lab-chip">Judge · <strong>simulated</strong></span>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
+    control_col, status_col = st.columns([1, 2], vertical_alignment="center")
+
+    with control_col:
+        run_clicked = st.button(
+            "Run Live Audit",
+            type="primary",
+            width="stretch",
+            icon=":material/play_arrow:",
+            key="run_live_audit",
+        )
+
+    with status_col:
+        st.markdown(
+            '<div class="lab-chips">'
+            '<span class="lab-chip"><span class="lab-dot is-live"></span>Trace recorded</span>'
+            '<span class="lab-chip">A1 · <strong>REFUND</strong></span>'
+            '<span class="lab-chip">Judge · <strong>simulated</strong></span>'
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     if run_clicked:
         st.session_state.audit = run_audit()
@@ -1316,28 +1221,18 @@ with live_tab:
 
     with col1:
         metric_card(
-            "metric-a1",
-            "A1 Invariant Status",
-            a1_value,
-            a1_class,
-            a1_meta,
-            "A1",
+            "metric-a1", "A1 invariant status", a1_value, a1_class, a1_meta, "A1"
         )
 
     with col2:
         metric_card(
-            "metric-kappa",
-            "Cohen's Kappa",
-            kappa_value,
-            kappa_class,
-            kappa_meta,
-            "κ",
+            "metric-kappa", "Cohen's Kappa", kappa_value, kappa_class, kappa_meta, "κ"
         )
 
     with col3:
         metric_card(
             "metric-verdict",
-            "Final Verdict",
+            "Final verdict",
             verdict_value,
             verdict_class,
             verdict_meta,
@@ -1393,9 +1288,9 @@ with portfolio_tab:
     st.markdown(
         '<p class="lab-eyebrow">Case library</p>'
         '<p class="lab-tab-title">Executive case study</p>'
-        '<p class="lab-subtitle" style="margin-bottom:1.2rem;">Read the claim, the '
-        "evidence and the invariant that catches it — then run the test that proves "
-        "the catch.</p>",
+        '<p class="lab-subtitle" style="margin-bottom:1.4rem;">Choose a case to read '
+        "the claim, the evidence and the invariant that catches it — then run the "
+        "test that proves the catch.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1446,12 +1341,18 @@ with portfolio_tab:
             "Test failed</span>"
         )
 
+    summary_chip = ""
+    if case_result is not None:
+        summary = pytest_summary(case_result["output"])
+        if summary:
+            summary_chip = f'<span class="lab-chip lab-mono">{summary}</span>'
+
     st.markdown(
         '<div class="lab-strip">'
         f'<span class="lab-chip"><strong>{case["invariant"]}</strong> invariant</span>'
         f'<span class="lab-chip">{case["dimension"]}</span>'
         f'<span class="lab-chip lab-mono">{case["test"]}</span>'
-        f"{verdict_chip}"
+        f"{summary_chip}{verdict_chip}"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1460,19 +1361,19 @@ with portfolio_tab:
         passed = case_result["returncode"] == 0
         if passed:
             st.success(
-                f"pytest passed — {case_result['test']}",
+                f"Test passed — {case['invariant']} holds for {selected_case}.",
                 icon=":material/check_circle:",
             )
         else:
             st.error(
-                f"pytest exited {case_result['returncode']} — {case_result['test']}",
+                f"Test failed — pytest exited {case_result['returncode']}.",
                 icon=":material/error:",
             )
 
         status_class = "is-pass" if passed else "is-fail"
         status_text = "exit 0" if passed else f"exit {case_result['returncode']}"
 
-        with st.expander("View Raw Test Execution Log", expanded=False):
+        with st.expander("View raw test execution log", expanded=False):
             with st.container(key="terminal", border=False):
                 st.markdown(
                     '<div class="lab-term-bar">'

@@ -8,14 +8,17 @@ Phase 9: the Streamlit dashboard is an interactive portfolio viewer. Two top-lev
 tabs — `Live Audit` (the D-017 replay, unchanged in behaviour) and
 `Portfolio Case Studies` (all five cases, each rendered from its `PORTFOLIO/*.md`
 with a button that runs that case's pytest file through `subprocess`) — and the
-dashboard finally has pytest coverage (D-025). Phase 8: the portfolio carries five
-cases (014-018), each one workflow, one dimension, one A1 invariant, one proving
-test. Cases 015-018 are deterministic failure fixtures — they prove the invariants
-and their checkers end to end, not any live model's behaviour (D-020). The live
-Gemini path is closed for now: five attempts on 2026-10-26 all ended in provider
-`503`, so Case 014 keeps its D-019 capture as the only live evidence (D-024).
-Phases 5-6 stand behind this: D-005 to D-012 for the pipeline, D-013 to D-017 for
-the live agent and the original dashboard.
+dashboard finally has pytest coverage (D-025). The appearance is now a light,
+high-contrast theme set in `.streamlit/config.toml` rather than fought into place
+with CSS (D-026): every text pair clears WCAG AA, and the case studies render as
+numbered section cards paced for long-form reading. Phase 8: the portfolio carries
+five cases (014-018), each one workflow, one dimension, one A1 invariant, one
+proving test. Cases 015-018 are deterministic failure fixtures — they prove the
+invariants and their checkers end to end, not any live model's behaviour (D-020).
+The live Gemini path is closed for now: five attempts on 2026-10-26 all ended in
+provider `503`, so Case 014 keeps its D-019 capture as the only live evidence
+(D-024). Phases 5-6 stand behind this: D-005 to D-012 for the pipeline, D-013 to
+D-017 for the live agent and the original dashboard.
 
 ## Status
 - Project initialized. Folders and empty files created.
@@ -98,6 +101,15 @@ the live agent and the original dashboard.
   five selector options, a case write-up actually rendering, the runner emitting
   real pytest output, and the moved live-audit path still yielding `PASSED`).
   Suite: **19 passed**.
+- Phase 9b readability rebuild (D-026): `.streamlit/config.toml` pins a light theme
+  (`base=light`, `primaryColor=#444ce7`, `backgroundColor=#f6f7f9`,
+  `textColor=#101828`, `font=sans serif`, `toolbarMode=minimal`). The dark palette
+  is gone; the case study renders as numbered section cards (`01 The Claim` …
+  `05 The Test`) split by `split_case_document()`, prose is 16px at 1.78
+  line-height capped at 74ch, a status strip carries the invariant, dimension, test
+  path and parsed `pytest` summary, and the raw log sits in a collapsed expander.
+  Contrast measured across 12 text/background pairs: lowest is 5.13:1, most are
+  10-18:1. Suite still **19 passed**.
 
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
@@ -356,6 +368,26 @@ the live agent and the original dashboard.
   'Certificate']`, three `KeyError: 'portfolio_case'`) before the UI existed.
   Deliberate deviation: `st.selectbox` instead of the guidance's preferred
   `st.segmented_control`, because five long case names overflow a segmented row.
+- **D-026 — The dashboard is themed light by configuration, not by CSS, because
+  the dark palette was the readability defect.** `.streamlit/config.toml` now pins
+  `base=light`, `primaryColor=#444ce7`, `backgroundColor=#f6f7f9`,
+  `secondaryBackgroundColor=#ffffff`, `textColor=#101828`, `font=sans serif` and
+  `toolbarMode=minimal`; `dashboard/app.py` keeps CSS only for layout it owns
+  (cards, chips, section panels, the terminal) and stops repainting widget chrome.
+  Rationale: the previous palette carried body text at 13px in `#8c9ab5` on
+  `#05070d`, roughly the AA floor, and the case studies are 1,500-word documents —
+  long-form prose is the one thing a dark console palette serves worst. Every
+  text/background pair was then **measured**, not eyeballed: body 15.21:1,
+  headings 18.22:1, secondary 10.46:1, muted meta 5.5:1, accent label 6.79:1,
+  pass 5.85:1, fail 6.57:1, warn 5.13:1, terminal 15.63:1 — all at or above the
+  4.5:1 AA requirement for normal text. Structure decisions follow the same
+  reasoning: prose is 16px at 1.78 line-height capped at 74ch, each `## ` heading
+  becomes a numbered card (`01`…`05`) via `split_case_document()`, the verdict is a
+  status strip above the document (invariant, dimension, test path, parsed pytest
+  summary, coloured dot), and the raw log is collapsed so a non-engineer meets a
+  green sentence rather than a traceback. This supersedes the Known Gap "the UI's
+  dark look rests on CSS selectors, not on a theme": a theme is now pinned, though
+  the selectors and `!important` rules for the custom cards remain.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -384,11 +416,23 @@ the live agent and the original dashboard.
 - **The dashboard duplicates the band→verdict map.** `VERDICT_BY_BAND` in
   `dashboard/app.py` mirrors the private `_VERDICT_BY_BAND` in
   `evals/certificate.py`; changing one will not move the other.
-- **The UI's dark look rests on CSS selectors, not on a theme.** The brief asked
-  for injected CSS, so `[data-testid="stAppViewContainer"]` / `stSidebar` /
-  `stChatMessage` targets and `!important` colour rules carry the appearance;
-  `.streamlit/config.toml` is still absent and no theme is pinned, so widget
-  chrome (code blocks, alerts, inputs) keeps the browser's light defaults.
+- **~~The UI's dark look rests on CSS selectors, not on a theme.~~ RESOLVED
+  (D-026).** `.streamlit/config.toml` now pins a light theme and the CSS no longer
+  repaints widget chrome. What remains true is narrower: the cards, chips, section
+  panels and terminal are styled through `[data-testid]` / `.st-key-*` selectors
+  with `!important`, so a Streamlit release that renames a test id breaks the
+  appearance without failing a test — no assertion checks the rendered DOM.
+- **Contrast is measured by hand, not enforced by a test.** The 12 ratios quoted in
+  D-026 came from a one-off script; nothing in `tests/` recomputes them, so a
+  future palette edit can silently regress below AA.
+- **The section splitter assumes `## ` headings.** `split_case_document()` keys on
+  the exact `## ` prefix and drops leading/trailing `---` rules. A case document
+  written with `###` sections or setext headings would render as one tall card —
+  still readable, but the pacing D-026 buys would be lost, and no test covers that
+  shape.
+- **The pytest summary is scraped from stdout.** `PYTEST_SUMMARY` matches a
+  `N passed in X.XXs` line; a colourised or reformatted pytest output would make
+  the chip disappear silently rather than fall back to something honest.
 - **A1-REFUND-02 is unevaluated.** The policy declares it, but
   `evaluate_a1(db, order_id, order_total)` receives no pre/post order status and
   no `tool_called`, so the checker skips it and can return `PASSED` without

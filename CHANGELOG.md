@@ -501,3 +501,80 @@
   `subprocess.TimeoutExpired`; both are recorded as Known Gaps rather than fixed.
 - Certificate download, the record-4 replay contents and the certificate edge cases
   remain uncovered.
+
+## 2026-10-26 — Phase 9b: High-contrast light redesign of the dashboard
+
+### Changed
+- `.streamlit/config.toml` (new) — the theme is now pinned in configuration instead
+  of being fought into place with CSS: `base=light`, `primaryColor=#444ce7`,
+  `backgroundColor=#f6f7f9`, `secondaryBackgroundColor=#ffffff`,
+  `textColor=#101828`, `font=sans serif`, `toolbarMode=minimal`,
+  `server.headless=true`. Verified through Streamlit's own config loader rather
+  than by eyeballing the page.
+- `dashboard/app.py` — the dark palette is gone. CSS now covers only layout the app
+  owns (cards, chips, section panels, terminal, selectbox button) and no longer
+  repaints Streamlit's widget chrome. Structural changes:
+  - `split_case_document()` splits a case study on `## ` headings; each section is
+    rendered as a numbered card (`<span class="lab-sec-num">01</span>The Claim` …
+    `05 The Test`) inside its own keyed container, with the document preamble in a
+    separate accent-topped card.
+  - Prose is 16px at 1.78 line-height, paragraphs spaced a full line apart and
+    capped at 74ch; tables get rounded borders, blockquotes an indigo panel, inline
+    code an accent-tinted chip.
+  - A status strip above the document carries the invariant, the dimension, the
+    test path, the parsed pytest summary and a coloured pass/fail dot, so the
+    verdict is legible without opening anything.
+  - The raw log stays in a collapsed `View raw test execution log` expander, drawn
+    as a dark terminal panel; the default view is a green sentence —
+    "Test passed — A1-TELEMETRY-01 holds for Case 017: GhostJacking."
+  - `pytest_summary()` scrapes `N passed in X.XXs` from the captured output for the
+    strip chip.
+  - Case selector and Run button share a row at the top of the tab
+    (`st.columns([3, 1], vertical_alignment="bottom")`), the selector at 46px min
+    height with a visible label; `:focus-visible` outlines added on buttons and the
+    selectbox.
+  - Live Audit cards restyled on white with hairline borders, 2.4rem tabular
+    figures and a soft shadow; behaviour unchanged.
+
+### Evidence
+- Contrast measured, not assumed — WCAG ratios for 12 text/background pairs:
+
+  | Pair | Ratio |
+  |---|---|
+  | body `#1b2638` on `#ffffff` | 15.21:1 |
+  | headings `#0d1526` on `#ffffff` | 18.22:1 |
+  | secondary `#344054` on `#ffffff` | 10.46:1 |
+  | muted meta `#5b6a80` on `#ffffff` | 5.50:1 |
+  | accent label `#3d47d8` on `#ffffff` | 6.79:1 |
+  | accent on soft `#3d47d8` on `#eef0ff` | 6.00:1 |
+  | pass `#087443` on `#ffffff` | 5.85:1 |
+  | fail `#b42318` on `#ffffff` | 6.57:1 |
+  | warn `#a35c07` on `#ffffff` | 5.13:1 |
+  | terminal `#e4ebf7` on `#0b1220` | 15.63:1 |
+
+  The previous palette ran muted body text at 13px in `#8c9ab5` on `#05070d` —
+  near the AA floor — which is the defect this rebuild removes.
+- Structure verified through AppTest: tabs `['Live Audit', 'Live Trace',
+  'Certificate', 'Portfolio Case Studies']`, five section labels
+  (`01 The Claim`, `02 The Reality (The Bug)`, `03 The Source`,
+  `04 The A1 Invariant (The Fix)`, `05 The Test`), expander
+  `('View raw test execution log', False)`, success banner present, and the code
+  block still carrying the real `1 passed in 0.04s`.
+- Theme verified through the loader: `theme.base = light`,
+  `theme.primaryColor = #444ce7`, `theme.backgroundColor = #f6f7f9`,
+  `theme.textColor = #101828`, `theme.font = sans serif`.
+- Preview server restarted (the old process predated the config file) —
+  `HTTP 200` on `http://localhost:8501`.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **19 passed**.
+- No test was added or edited: this pass changed presentation only, and the
+  existing AppTest suite covers every behaviour it touched (tabs, selector options,
+  rendered write-up, runner output, live-audit path).
+
+### Open
+- Contrast is measured by a one-off script, not enforced by a test (D-026).
+- `split_case_document()` assumes `## ` headings; a document written with `###`
+  renders as a single card.
+- `PYTEST_SUMMARY` scrapes stdout, so a reformatted pytest line would silently drop
+  the chip.
