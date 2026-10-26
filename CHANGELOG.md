@@ -359,3 +359,89 @@
 - The 503 proves the live path has no retry/backoff; a transient provider error
   is currently indistinguishable from a lab failure at the console. Worth a
   bounded retry in `scripts/run_live_audit.py` before the run is used as a gate.
+
+## 2026-10-26 — Phase 7/8: Portfolio expansion, repo hygiene, live path closed
+
+### Changed
+- `app/llm_agent.py:4,11` — `from dotenv import load_dotenv` plus `load_dotenv()`
+  immediately above the module-level `genai.Client`, so the key is never passed
+  through the shell, the chat or git. `python-dotenv` was already installed and
+  already in `requirements.txt`; no dependency was added (D-022).
+- `.gitignore` — added `env.txt` and `.totem/`, so the stray env file and totem's
+  binary DB/WAL cannot be staged.
+- Case 015 (Infinite Loop / `A1-COST-01`): `app/loop_agent.py`,
+  `evals/cost_checker.py`, `tests/test_loop_agent.py`,
+  `PORTFOLIO/CASE_015_Infinite_Loop.md`.
+- Case 016 (Prompt Injection / `A1-SEC-01`): `app/injection_agent.py`,
+  `evals/security_checker.py`, `tests/test_injection_agent.py`,
+  `PORTFOLIO/CASE_016_Prompt_Injection.md`.
+- Case 017 (GhostJacking / `A1-TELEMETRY-01`): `app/telemetry_agent.py`,
+  `evals/telemetry_checker.py`, `tests/test_telemetry_agent.py`,
+  `PORTFOLIO/CASE_017_GhostJacking.md`.
+- Case 018 (MCP OAuth Bypass / `A1-AUTH-01`): `app/mcp_auth_agent.py`,
+  `evals/auth_checker.py`, `tests/test_mcp_auth_agent.py`,
+  `PORTFOLIO/CASE_018_MCP_OAuth_Bypass.md`.
+- `PORTFOLIO/README.md` — created; it did not exist (only CASE_014 was indexed by
+  the directory listing). Lists all five cases and states the scope of each.
+- `STATE.md` — new decisions D-020 to D-024, expanded Status, seven new Known
+  Gaps, Next Actions rewritten (items 8-12).
+
+### Evidence
+- **`.env` was unusable as first written.** UTF-16LE (`ff fe` BOM), 112 bytes, a
+  single line with **no `GEMINI_API_KEY=` name and no `=`**; `load_dotenv()` raised
+  `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0`, and
+  `grep -c '^GEMINI_API_KEY=' .env` returned `0`. Rewritten as UTF-8 with the
+  variable name added (69 bytes); the value was moved through a UTF-16 decode and
+  never printed, and a backup was left outside the repo. Verified with the variable
+  unset: `env -u GEMINI_API_KEY python -c "import app.llm_agent"` succeeds, key
+  length 53. `git check-ignore -v .env` → `.gitignore:4:.env`.
+- **Five live attempts, five `503 UNAVAILABLE`, no clean run.** Backoffs: none,
+  45s, 120s, 300s, 600s. The five logs collapse to exactly two distinct files by
+  SHA-256: `767408213c07` (attempts 1 and 4) and `0d9d3a9841e2` (attempts 2, 3, 5),
+  differing only in the failing call site. Attempts 1 and 4 died at
+  `app/llm_agent.py:82` — the **post-tool-call** leg, so the model emitted
+  `function_call`, `issue_refund` ran, and the `503` hit while reporting the result
+  back. Attempts 2, 3 and 5 died at `:61`, the turn's first send. Neither `:82`
+  attempt printed anything, so no ledger, `refund_count` or A1 status exists on
+  disk; recorded as unverified provenance, not a PASS (D-024). Retries stopped on
+  the Auditor's instruction.
+- **D-019 corrected.** Its "the client has no retry policy" is wrong: the
+  tracebacks show `_api_client.py:1632` calling `self._retry(...)`, and attempt 1
+  burned 318s versus attempt 2's 63s. The live path still has no *bounded* retry of
+  its own (D-023).
+- **Citations checked before use, neither readable at source.** ngCERT advisory of
+  2026-10-06 (Case 017) exists but returns HTTP 403 here; CVE-2026-108586 (Case
+  018, 1MCP Agent 0.20.0-0.39.0, published 2026-10-10) is corroborated verbatim
+  across OpenCVE, Tenable, Rapid7, SentinelOne and Vulners, with NVD itself
+  returning a Cloudflare challenge. Both artifacts state the provenance limit.
+- **Defect caught by a weak test's sibling.** Case 017's resource regex first
+  captured `'production-data.'` with the trailing period; the brief's assertions
+  (`len == 1`, checker `FAILED`) passed anyway. An exact-name assertion was added
+  first (red: `assert ['production-data.'] == ['production-data']`), then the regex
+  fixed. Case 018 was written with that lesson applied plus a control test proving
+  the same tool is rejected without the `"not "` prefix.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **14 passed** (9 before
+  this phase; +1 per case, +2 for Case 018's negation and control tests).
+- Rule 1 was honoured for Cases 015-018: the test file was written first and run
+  red (`ModuleNotFoundError`) before the module existed. It remains unmet for
+  `app/llm_agent.py` (unchanged since Phase 6).
+
+### Commits
+- `53a6ab7` Phase 7: Add Case 015 Infinite Loop artifact and code
+- `c235f9f` Chore: Ignore totem db and stray env files
+- `c4ea379` Phase 7: Add Case 016 Prompt Injection artifact and code
+- `2b03ac6` Phase 8: Add Case 017 GhostJacking artifact and code
+- this commit — Phase 8: Add Case 018 MCP OAuth Bypass and update documentation
+  (also carries `app/llm_agent.py`, `STATE.md`, `CHANGELOG.md` and
+  `PORTFOLIO/README.md`).
+- `a428999` precedes the phase: Phase 7: Finalize Case 014 with live Gemini trace.
+
+### Open
+- No bounded retry/backoff exists in the live path; a `503` is still
+  indistinguishable from a lab failure at the console (Next Action 8).
+- Case 014's live proof remains n = 1 from 2026-10-21. This phase produced no
+  replacement capture and did not modify `PORTFOLIO/CASE_014_Duplicate_Refund.md`.
+- Cases 015-017 have no test asserting the checker returns `PASSED` on a clean
+  trace, and no test covers the fixtures' no-trigger branches (Next Action 10).

@@ -14,8 +14,11 @@ invariant that catches it, and the test proving the catch.
 - [Case 017 — Telemetry Poisoning (GhostJacking)](CASE_017_GhostJacking.md)
   A poisoned log line deletes the production `production-data` S3 bucket; `A1-TELEMETRY-01`.
   Cites the ngCERT advisory of 6 October 2026.
+- [Case 018 — MCP Authorization Bypass (OAuth Scope Negation)](CASE_018_MCP_OAuth_Bypass.md)
+  A `"not read_reports"` tag filter lets a `read_reports`-scoped token invoke `delete_user`;
+  `A1-AUTH-01`. Cites CVE-2026-108586.
 
-**Scope.** Cases 015, 016 and 017 run against deterministic stubs that reproduce the failure shape;
+**Scope.** Cases 015 through 018 run against deterministic stubs that reproduce the failure shape;
 they prove the invariant and its checker work end to end, and are not measurements of any live
 model's behaviour. Case 014's live evidence is a single two-turn session (n = 1), and the Kappa on
 its certificate still comes from the simulated judge described in `STATE.md`. No case here is a

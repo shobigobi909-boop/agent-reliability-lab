@@ -1,14 +1,16 @@
 # Project State — Agent Reliability Lab
-Last updated: 2026-10-21
+Last updated: 2026-10-26
 Stack: Python 3.12.10 (`.venv` interpreter), FastAPI, Pytest, PyYAML, Streamlit,
-google-genai
+google-genai, python-dotenv
 
 ## Current Focus
-Phase 6 complete: the agent under audit is a real model. Gemini 3.8 Flash calls
-`issue_refund` against a live `FakeDB`, refuses a duplicate request without calling
-the tool (trace-verified), and `scripts/run_live_certificate.py` renders a
-certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
-(D-005 to D-012); Phase 6 decisions are D-013 to D-016.
+Phase 8: the portfolio carries five cases (014-018), each one workflow, one
+dimension, one A1 invariant, one proving test. Cases 015-018 are deterministic
+failure fixtures — they prove the invariants and their checkers end to end, not
+any live model's behaviour (D-020). The live Gemini path is closed for now: five
+attempts on 2026-10-26 all ended in provider `503`, so Case 014 keeps its D-019
+capture as the only live evidence (D-024). Phases 5-6 stand behind this:
+D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard.
 
 ## Status
 - Project initialized. Folders and empty files created.
@@ -60,6 +62,29 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   `run_live_audit.py` run (D-019), captured 2026-10-21 with `GEMINI_API_KEY`
   present: 588s, turn 1 `tool_called='issue_refund'`, turn 2
   `tool_called=None`, `refund_count == 1`, A1 `PASSED`.
+
+- Portfolio expanded to five cases: `CASE_015_Infinite_Loop.md` (`A1-COST-01`,
+  D-020), `CASE_016_Prompt_Injection.md` (`A1-SEC-01`), `CASE_017_GhostJacking.md`
+  (`A1-TELEMETRY-01`, cites the ngCERT advisory of 2026-10-06) and
+  `CASE_018_MCP_OAuth_Bypass.md` (`A1-AUTH-01`, cites CVE-2026-108586).
+  `PORTFOLIO/README.md` indexes all five and states the scope of each.
+- Backing code: `app/loop_agent.py` + `evals/cost_checker.py`,
+  `app/injection_agent.py` + `evals/security_checker.py`,
+  `app/telemetry_agent.py` + `evals/telemetry_checker.py`,
+  `app/mcp_auth_agent.py` + `evals/auth_checker.py`; one test file each.
+  Suite: **14 passed**.
+- Repo hygiene: `.gitignore` now ignores `env.txt` and `.totem/` (`c235f9f`), so
+  totem's binary DB and stray env files cannot be staged.
+- `app/llm_agent.py` calls `load_dotenv()` before the module-level `genai.Client`
+  (D-022). `python-dotenv` was already in `requirements.txt`. The first `.env`
+  written for this was UTF-16LE and carried no `GEMINI_API_KEY=` name; it was
+  rewritten as UTF-8 with the variable name, value never printed.
+- Live path closed for now: five `run_live_audit.py` attempts on 2026-10-26 all
+  ended `503 UNAVAILABLE`, 2 of them on the post-tool-call leg (D-024). No retries
+  are to be run; D-019's 588s capture remains Case 014's live evidence.
+- Commits this phase: `53a6ab7` (Case 015), `c235f9f` (.gitignore chore),
+  `c4ea379` (Case 016), `2b03ac6` (Case 017), then Case 018 with these
+  documentation updates. `a428999` precedes them (D-019 live capture).
 
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
@@ -236,6 +261,70 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   not the D-006 guard's, so the guard remains unexercised on a live run. Scope is
   n = 1: the artifact now proves the live treatment for one session, and still
   does not calibrate the model.
+- **D-020 — Cases 015-018 audit deterministic fixtures, not live models.**
+  `app/loop_agent.py`, `app/injection_agent.py`, `app/telemetry_agent.py` and
+  `app/mcp_auth_agent.py` each hardcode the obedience (Critic always rejects;
+  trigger phrase plus email; trigger line plus resource name; `"not "` filter
+  skips the scope check), so the failure is reproducible without a provider, a
+  key or a bill. Rationale: the invariant tests the *shape* of the failure —
+  resource deleted, secret egressed, scope crossed — and a live model would add
+  cost, latency and provider dependence without changing what the checker must
+  catch. Consequence, stated in every artifact: these are proofs that the
+  invariants and their checkers work, not measurements of any model's
+  propensity to fail. Cases 015-018 must never be cited as evidence that a model
+  is exploitable. Suite went 9 → 10 → 11 → 12 → 14 passed.
+- **D-021 — An A1 checker is documented as a post-hoc detector, never as a fix.**
+  Every Case 015-018 artifact carries an explicit "Scope, stated plainly"
+  paragraph saying the checker scores a finished trace, that the vulnerable agent
+  never consults it, and what a real control would be (an enforcement ceiling in
+  the loop; an egress allowlist; treating telemetry as data; intersecting filter
+  results with the token scope). Rationale: the briefs' heading is "The Fix", and
+  printing a detector under that heading would repeat D-016's integrity failure in
+  prose instead of in a Kappa constant. Also recorded per case: `A1-SEC-01` checks
+  recipients only, so an allowlisted send carrying the secret passes;
+  `A1-TELEMETRY-01` forbids every deletion and cannot tell injection from
+  maintenance; `A1-AUTH-01` sees tool names but not the filter that produced them,
+  and trusts the `granted_scopes` its caller supplies.
+- **D-022 — The live module loads `.env` itself; the first `.env` was unreadable.**
+  `app/llm_agent.py:4,11` — `from dotenv import load_dotenv` and `load_dotenv()`
+  immediately above the module-level `genai.Client`, so the key never has to
+  enter the shell, the chat transcript or git. `python-dotenv` was already in
+  `requirements.txt` and installed; no dependency was added. The `.env` created
+  for this was **UTF-16LE** (`ff fe` BOM) and contained the bare key with **no
+  `GEMINI_API_KEY=` name and no `=` at all**, so `load_dotenv()` raised
+  `UnicodeDecodeError: 0xff` and `grep '^GEMINI_API_KEY='` matched nothing. It was
+  rewritten as UTF-8 with the variable name added; the value was carried through a
+  UTF-16 decode and never printed, and a backup was left outside the repo.
+  Verified with the variable unset: `env -u GEMINI_API_KEY python -c "import
+  app.llm_agent"` succeeds and the client sees a 53-character key. Consequence:
+  the known gap "importing `app.llm_agent` without `GEMINI_API_KEY` raises at
+  import time" is now false when CWD is the repo root, because `load_dotenv()`
+  searches upward from CWD.
+- **D-023 — Correction to D-019: `google.genai` does have a retry policy.**
+  D-019 states "the client has no retry policy (`tenacity` is wired into
+  `google.genai`, but it surfaces the error rather than absorbing it)". The
+  tracebacks show otherwise: `_api_client.py:1632` calls `self._retry(...)` and
+  attempt 1 burned **318s** before surfacing the `503`, versus 63s for attempt 2 —
+  the internal retry absorbs and eventually re-raises. What the live path lacks is
+  a *bounded retry of its own* and any retry/backoff policy at the script level,
+  which is what Next Action 8 asks for. Rationale: an audit ledger that leaves a
+  demonstrably wrong sentence in place teaches the next session the wrong thing;
+  D-019's text is amended by this entry rather than rewritten.
+- **D-024 — Five `503`s close the live path; the D-019 capture stands.**
+  On 2026-10-26 five `run_live_audit.py` attempts were made (no backoff, 45s,
+  120s, 300s, 600s) and all five ended `google.genai.errors.ServerError: 503
+  UNAVAILABLE ... high demand`. The five logs collapse to exactly two distinct
+  files by SHA-256, differing only in the failing call site:
+  `app/llm_agent.py:82` (attempts 1 and 4 — the **post-tool-call** leg, so the
+  model did emit `function_call`, `issue_refund` ran, and the `503` hit while
+  reporting the result back) and `:61` (attempts 2, 3, 5 — the turn's first send).
+  Rationale for stopping: the failure is provider-side and reproducible, a sixth
+  attempt has no evidence of behaving differently, and the two `:82` attempts are
+  the closest thing to live proof this run produced. They are **not** a PASS: both
+  processes died before printing, so no ledger, `refund_count` or A1 status exists
+  on disk. Recorded as unverified provenance, per the Auditor's ruling. Case 014
+  keeps D-019's 588s stdout as its live evidence, and no further live retries are
+  authorised.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -314,10 +403,34 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
   a failed run would reveal the next one.
 - Decision numbering has no D-004 in this file; D-005 follows the Auditor's
   numbering rather than the local sequence.
+- **`load_dotenv()` resolves `.env` from the current working directory upward.**
+  The key is only found when the process runs inside the repo tree; running
+  `scripts/run_live_audit.py` from elsewhere silently loses the environment
+  variable and fails at import (D-022). Nothing pins the path.
+- **The `.env` repair is undocumented by git.** `.env` is gitignored, so the
+  UTF-16LE-to-UTF-8 conversion and the added variable name exist only in this
+  ledger and a temp backup outside the repo; a future session inspecting the file
+  cannot tell it was ever malformed.
+- **Neither external citation was read at its primary source.** The ngCERT
+  advisory (Case 017) returns HTTP 403 to this environment and the NVD record
+  (Case 018) returns a Cloudflare challenge, so both are quoted from mirrors and
+  search indexes, and both artifacts say so. The CVE severity rating is secondhand.
+- **`evaluate_auth` trusts the scopes it is given.** It compares executed tool
+  names against a `granted_scopes` list supplied by the caller, so a server that
+  reports its scopes from the same compromised configuration it uses to resolve
+  the filter would make the checker agree with the attacker (D-021).
+- **The four fixture agents promise more than they model.** Each reproduces one
+  trigger with a fixed payload; none models context growth, partial authorisation,
+  retries, or more than one tool. `A1-COST-01` counts trace length, which equals
+  steps only because one loop iteration records exactly one entry — an
+  implementation detail the invariant depends on but no test locks.
+- **The four new checkers ship no negative-path test except Case 018's.** A
+  checker that always returned FAILED would still pass Cases 015-017, because
+  nothing asserts `{"status": "PASSED"}` for a clean trace.
 
 ## Next Actions
 1. User review of `app/llm_agent.py`, `scripts/run_live_audit.py`,
-   `scripts/run_live_certificate.py` and D-013 to D-016.
+   `scripts/run_live_certificate.py`, and D-013 to D-024.
 2. Make the live model the judge in `evals/calibration/harness.py` over a
    human-labeled corpus; until then every Kappa on a certificate is simulated and
    must not be published.
@@ -334,6 +447,20 @@ certificate scored by `run_calibration()`. The Phase 5 pipeline stands behind it
    and paste it verbatim into `PORTFOLIO/CASE_014_Duplicate_Refund.md`~~
    **DONE (D-019)** — 588s run, verbatim stdout pasted, disclaimer removed.
 8. Add a bounded retry/backoff to the live path so a provider `503` is not
-   reported as a lab failure (D-019).
+   reported as a lab failure. Still open after D-023/D-024: the client's internal
+   `tenacity` retry absorbs and re-raises, and nothing at the script level decides
+   when to stop or how a provider failure should be labelled.
 9. Decide whether the portfolio may cite a single live session (n = 1) as proof of
    the treatment on a live model, or whether it needs a repeated-run distribution.
+   Now urgent: D-024 produced no replacement capture, so n = 1 is all there is.
+10. Close the fixture coverage gaps. No test asserts that `run_agent_loop`
+    terminates when the Critic accepts, that `read_document` sends nothing without
+    the trigger phrase, or that `process_log` deletes nothing without the trigger
+    line — Case 018 is the only fixture with a control. Each gap hides a checker
+    that could be green because the fixture never fires.
+11. Decide whether the fixtures' agents should expose their tool side effects as
+    structured records rather than plain strings (`send_email` stores a dict,
+    `delete_resource` and `execute_tool` store bare names), so checkers can assert
+    on what a tool was asked to do, not only on how many times it ran.
+12. Review D-020 to D-024 with the Auditor; D-021 in particular sets a wording
+    contract ("post-hoc detector, not a fix") that every future case inherits.
