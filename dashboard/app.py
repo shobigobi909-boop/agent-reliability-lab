@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -848,6 +849,198 @@ hr, [data-testid="stDivider"] hr {
     border: 2px solid #05070d;
 }
 ::-webkit-scrollbar-thumb:hover { background: #2b3a56; }
+
+.lab-tab-title {
+    margin: 0 0 1.05rem;
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--lab-text);
+}
+
+.lab-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    margin: 1rem 0 0.9rem;
+}
+
+.lab-sec-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0 0 0.9rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--lab-accent);
+}
+
+.lab-sec-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--lab-edge) 0%, rgba(27, 36, 54, 0) 100%);
+}
+
+.st-key-case-preamble,
+[class*="st-key-case-section-"] {
+    border: 1px solid var(--lab-edge);
+    border-radius: var(--lab-radius);
+    background: linear-gradient(168deg, #0b111d 0%, #080c15 100%);
+    padding: 1.65rem 1.9rem 1.35rem;
+    margin-bottom: 1.15rem;
+    box-shadow: 0 22px 46px -42px rgba(0, 0, 0, 0.95);
+}
+
+.st-key-case-preamble {
+    background:
+        radial-gradient(120% 130% at 0% 0%, rgba(109, 124, 255, 0.10) 0%, rgba(11, 17, 29, 0) 55%),
+        linear-gradient(168deg, #0c1424 0%, #080c15 100%);
+}
+
+.st-key-case-preamble [data-testid="stMarkdownContainer"] h1 {
+    margin: 0 0 0.85rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--lab-edge);
+    font-size: 1.42rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
+    color: #ffffff;
+}
+
+.st-key-case-preamble [data-testid="stMarkdownContainer"] p,
+.st-key-case-preamble [data-testid="stMarkdownContainer"] li,
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] p,
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] li {
+    font-size: 0.96rem;
+    line-height: 1.85;
+    color: #d6deee;
+    margin-bottom: 1.05rem;
+    max-width: 80ch;
+}
+
+.st-key-case-preamble [data-testid="stMarkdownContainer"] p:last-child,
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] p:last-child,
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] li:last-child {
+    margin-bottom: 0;
+}
+
+.st-key-case-preamble [data-testid="stMarkdownContainer"] strong,
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] h2 {
+    margin: 1.5rem 0 0.7rem;
+    font-size: 1.02rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #a9b8ff !important;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] h3 {
+    margin: 1.2rem 0 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #c8d3ea !important;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] blockquote {
+    margin: 1.1rem 0;
+    padding: 0.85rem 1.15rem;
+    border-left: 2px solid var(--lab-accent);
+    border-radius: 0 10px 10px 0;
+    background: rgba(109, 124, 255, 0.07);
+    color: #e3eafa;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] blockquote p {
+    margin-bottom: 0;
+    font-size: 0.98rem;
+    line-height: 1.8;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2rem 0;
+    font-size: 0.84rem;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] th {
+    padding: 0.55rem 0.75rem;
+    background: #0e1523;
+    border-bottom: 1px solid var(--lab-edge);
+    color: #a9b8ff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: left;
+    text-transform: uppercase;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid rgba(27, 36, 54, 0.8);
+    color: #cfd8ea;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] code {
+    padding: 0.12rem 0.36rem;
+    border-radius: 5px;
+    background: rgba(109, 124, 255, 0.12);
+    color: #c7d0ff;
+    font-family: var(--lab-mono);
+    font-size: 0.8rem;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] pre {
+    margin: 1.1rem 0;
+    padding: 0.95rem 1.1rem;
+    border: 1px solid var(--lab-edge);
+    border-radius: 11px;
+    background: #060910 !important;
+    font-size: 0.79rem;
+    line-height: 1.65;
+}
+
+[class*="st-key-case-section-"] [data-testid="stMarkdownContainer"] pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 0.79rem;
+}
+
+[data-testid="stExpander"] {
+    border: 1px solid var(--lab-edge) !important;
+    border-radius: 12px !important;
+    background: #080c14 !important;
+    overflow: hidden;
+}
+
+[data-testid="stExpander"] summary {
+    padding: 0.55rem 1rem;
+}
+
+[data-testid="stExpander"] summary p {
+    font-size: 0.82rem !important;
+    font-weight: 600;
+    color: var(--lab-muted) !important;
+    letter-spacing: 0.01em;
+}
+
+[data-testid="stExpander"] summary:hover p {
+    color: var(--lab-text) !important;
+}
+
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    padding: 0 0.85rem 0.85rem;
+}
 </style>
 """
 
@@ -947,6 +1140,53 @@ def panel_head(title: str, sub: str, chips: str = "") -> None:
         "</div>",
         unsafe_allow_html=True,
     )
+
+
+def split_case_document(text: str) -> tuple[str, list[tuple[str, str]]]:
+    preamble: list[str] = []
+    sections: list[tuple[str, str]] = []
+    heading: str | None = None
+    body: list[str] = []
+
+    for line in text.splitlines():
+        if line.startswith("## "):
+            if heading is None:
+                preamble = body
+            else:
+                sections.append((heading, "\n".join(body)))
+            heading = line[3:].strip()
+            body = []
+        else:
+            body.append(line)
+
+    if heading is None:
+        preamble = body
+    else:
+        sections.append((heading, "\n".join(body)))
+
+    def tidy(lines: list[str]) -> str:
+        trimmed = list(lines)
+        while trimmed and trimmed[-1].strip() in {"", "---"}:
+            trimmed.pop()
+        while trimmed and trimmed[0].strip() in {"", "---"}:
+            trimmed.pop(0)
+        return "\n".join(trimmed).strip()
+
+    cleaned = [(title, tidy(block.splitlines())) for title, block in sections]
+    return tidy(preamble), [(title, block) for title, block in cleaned if block]
+
+
+def render_case_document(text: str) -> None:
+    preamble, sections = split_case_document(text)
+
+    if preamble:
+        with st.container(key="case-preamble", border=False):
+            st.markdown(preamble)
+
+    for index, (heading, body) in enumerate(sections, start=1):
+        with st.container(key=f"case-section-{index}", border=False):
+            st.markdown(f'<p class="lab-sec-label">{heading}</p>', unsafe_allow_html=True)
+            st.markdown(body)
 
 
 if "audit" not in st.session_state:
@@ -1150,77 +1390,37 @@ with live_tab:
             )
 
 with portfolio_tab:
-    selected_case = st.selectbox(
-        "Case study",
-        list(CASES),
-        key="portfolio_case",
-        help="Each case pairs a PORTFOLIO write-up with the pytest file behind its invariant.",
+    st.markdown(
+        '<p class="lab-eyebrow">Case library</p>'
+        '<p class="lab-tab-title">Executive case study</p>'
+        '<p class="lab-subtitle" style="margin-bottom:1.2rem;">Read the claim, the '
+        "evidence and the invariant that catches it — then run the test that proves "
+        "the catch.</p>",
+        unsafe_allow_html=True,
     )
+
+    select_col, run_col = st.columns([3, 1], vertical_alignment="bottom")
+
+    with select_col:
+        selected_case = st.selectbox(
+            "Case study",
+            list(CASES),
+            key="portfolio_case",
+            help="Each case pairs a PORTFOLIO write-up with the pytest file behind its invariant.",
+        )
+
+    with run_col:
+        run_case = st.button(
+            "Run this case's test",
+            key="portfolio_run_test",
+            type="primary",
+            width="stretch",
+            icon=":material/play_arrow:",
+        )
+
     case = CASES[selected_case]
     result = st.session_state.portfolio_result
     case_result = result if result and result["case"] == selected_case else None
-
-    if case_result is None:
-        status_chip = '<span class="lab-chip"><span class="lab-dot"></span>Not run</span>'
-        step3 = ""
-    elif case_result["returncode"] == 0:
-        status_chip = (
-            '<span class="lab-chip"><span class="lab-dot is-live"></span>'
-            "Pipeline passed</span>"
-        )
-        step3 = "is-done"
-    else:
-        status_chip = (
-            '<span class="lab-chip"><span class="lab-dot is-fail"></span>'
-            "Pipeline failed</span>"
-        )
-        step3 = "is-fail"
-
-    st.markdown('<div class="lab-panel">', unsafe_allow_html=True)
-    panel_head(
-        selected_case,
-        f"{case['dimension']} · invariant <span class='lab-mono'>{case['invariant']}</span>",
-        status_chip,
-    )
-    st.markdown(
-        '<div class="lab-pipeline">'
-        '<span class="lab-step is-done"><span class="lab-step-num">01</span>Select case</span>'
-        '<span class="lab-arrow">→</span>'
-        '<span class="lab-step is-done"><span class="lab-step-num">02</span>Load write-up</span>'
-        '<span class="lab-arrow">→</span>'
-        f'<span class="lab-step {step3}"><span class="lab-step-num">03</span>Run invariant test</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if (ROOT / case["md"]).is_file():
-        with st.container(key="doc-pane", border=False):
-            st.markdown(read_case_markdown(case["md"]))
-    else:
-        st.warning(f"Case study not found: {case['md']}", icon=":material/report:")
-
-    st.write("")
-
-    st.markdown('<div class="lab-panel">', unsafe_allow_html=True)
-    panel_head(
-        "CI pipeline",
-        "Runs the case's pytest file in this repository and streams the result.",
-        f'<span class="lab-chip">target · <strong>{case["invariant"]}</strong></span>',
-    )
-    st.markdown(
-        f'<p class="lab-mono" style="margin:0.7rem 0 0;">$ {PYTHON.name} -m pytest '
-        f'{case["test"]} -q</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    run_case = st.button(
-        "Run this case's test",
-        key="portfolio_run_test",
-        type="primary",
-        icon=":material/play_arrow:",
-    )
 
     if run_case:
         with st.spinner(f"Running {case['test']}…"):
@@ -1230,6 +1430,31 @@ with portfolio_tab:
                 **run_case_test(case["test"]),
             }
         case_result = st.session_state.portfolio_result
+
+    if case_result is None:
+        verdict_chip = (
+            '<span class="lab-chip"><span class="lab-dot"></span>Test not run</span>'
+        )
+    elif case_result["returncode"] == 0:
+        verdict_chip = (
+            '<span class="lab-chip"><span class="lab-dot is-live"></span>'
+            "Test passed</span>"
+        )
+    else:
+        verdict_chip = (
+            '<span class="lab-chip"><span class="lab-dot is-fail"></span>'
+            "Test failed</span>"
+        )
+
+    st.markdown(
+        '<div class="lab-strip">'
+        f'<span class="lab-chip"><strong>{case["invariant"]}</strong> invariant</span>'
+        f'<span class="lab-chip">{case["dimension"]}</span>'
+        f'<span class="lab-chip lab-mono">{case["test"]}</span>'
+        f"{verdict_chip}"
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     if case_result:
         passed = case_result["returncode"] == 0
@@ -1243,22 +1468,32 @@ with portfolio_tab:
                 f"pytest exited {case_result['returncode']} — {case_result['test']}",
                 icon=":material/error:",
             )
+
         status_class = "is-pass" if passed else "is-fail"
         status_text = "exit 0" if passed else f"exit {case_result['returncode']}"
-        with st.container(key="terminal", border=False):
-            st.markdown(
-                '<div class="lab-term-bar">'
-                '<span class="lab-term-dot r"></span>'
-                '<span class="lab-term-dot y"></span>'
-                '<span class="lab-term-dot g"></span>'
-                f'<span class="lab-term-title">pytest · {case_result["test"]}</span>'
-                f'<span class="lab-term-status {status_class}">{status_text}</span>'
-                "</div>",
-                unsafe_allow_html=True,
-            )
-            st.code(case_result["output"], language="text")
+
+        with st.expander("View Raw Test Execution Log", expanded=False):
+            with st.container(key="terminal", border=False):
+                st.markdown(
+                    '<div class="lab-term-bar">'
+                    '<span class="lab-term-dot r"></span>'
+                    '<span class="lab-term-dot y"></span>'
+                    '<span class="lab-term-dot g"></span>'
+                    f'<span class="lab-term-title">pytest · {case_result["test"]}</span>'
+                    f'<span class="lab-term-status {status_class}">{status_text}</span>'
+                    "</div>",
+                    unsafe_allow_html=True,
+                )
+                st.code(case_result["output"], language="text")
     else:
         st.caption(
             "No run recorded for this case yet. The button executes the real test "
-            "file — nothing is simulated in the output below."
+            "file — nothing is simulated in the log."
         )
+
+    st.write("")
+
+    if (ROOT / case["md"]).is_file():
+        render_case_document(read_case_markdown(case["md"]))
+    else:
+        st.warning(f"Case study not found: {case['md']}", icon=":material/report:")
