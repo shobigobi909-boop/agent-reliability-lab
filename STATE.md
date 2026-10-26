@@ -4,13 +4,18 @@ Stack: Python 3.12.10 (`.venv` interpreter), FastAPI, Pytest, PyYAML, Streamlit,
 google-genai, python-dotenv
 
 ## Current Focus
-Phase 8: the portfolio carries five cases (014-018), each one workflow, one
-dimension, one A1 invariant, one proving test. Cases 015-018 are deterministic
-failure fixtures — they prove the invariants and their checkers end to end, not
-any live model's behaviour (D-020). The live Gemini path is closed for now: five
-attempts on 2026-10-26 all ended in provider `503`, so Case 014 keeps its D-019
-capture as the only live evidence (D-024). Phases 5-6 stand behind this:
-D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard.
+Phase 9: the Streamlit dashboard is an interactive portfolio viewer. Two top-level
+tabs — `Live Audit` (the D-017 replay, unchanged in behaviour) and
+`Portfolio Case Studies` (all five cases, each rendered from its `PORTFOLIO/*.md`
+with a button that runs that case's pytest file through `subprocess`) — and the
+dashboard finally has pytest coverage (D-025). Phase 8: the portfolio carries five
+cases (014-018), each one workflow, one dimension, one A1 invariant, one proving
+test. Cases 015-018 are deterministic failure fixtures — they prove the invariants
+and their checkers end to end, not any live model's behaviour (D-020). The live
+Gemini path is closed for now: five attempts on 2026-10-26 all ended in provider
+`503`, so Case 014 keeps its D-019 capture as the only live evidence (D-024).
+Phases 5-6 stand behind this: D-005 to D-012 for the pipeline, D-013 to D-017 for
+the live agent and the original dashboard.
 
 ## Status
 - Project initialized. Folders and empty files created.
@@ -85,6 +90,14 @@ D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard
 - Commits this phase: `53a6ab7` (Case 015), `c235f9f` (.gitignore chore),
   `c4ea379` (Case 016), `2b03ac6` (Case 017), then Case 018 with these
   documentation updates. `a428999` precedes them (D-019 live capture).
+- Phase 9 UI: `dashboard/app.py` posts two top-level tabs (`Live Audit`,
+  `Portfolio Case Studies`), a `CASES` map of case → `{"md", "test"}`, a cached
+  Markdown reader and a `subprocess` pytest runner keyed `portfolio_run_test`.
+  The Run Live Audit button moved out of the sidebar into the Live Audit tab.
+  `tests/test_dashboard_portfolio.py` is new: 5 AppTest cases (both tab labels, all
+  five selector options, a case write-up actually rendering, the runner emitting
+  real pytest output, and the moved live-audit path still yielding `PASSED`).
+  Suite: **19 passed**.
 
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
@@ -325,6 +338,24 @@ D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard
   on disk. Recorded as unverified provenance, per the Auditor's ruling. Case 014
   keeps D-019's 588s stdout as its live evidence, and no further live retries are
   authorised.
+- **D-025 — The dashboard is a two-tab viewer; the case list is a literal map.**
+  `dashboard/app.py` posts `st.tabs(["Live Audit", "Portfolio Case Studies"])`.
+  Tab 1 holds the unchanged D-017 replay (Run button, three metric cards, nested
+  `Live Trace` / `Certificate`); tab 2 renders the selected `PORTFOLIO/*.md` from a
+  module-level `CASES` map and runs that case's pytest file via
+  `subprocess.run([PYTHON, "-m", "pytest", <test>, "-q"], cwd=ROOT)`. Rationale
+  for a literal map rather than discovery: five explicit entries are auditable at
+  a glance, a glob over `PORTFOLIO/` would silently render a half-finished case,
+  and every entry is pinned to the test file that proves its invariant. The Run
+  button moved out of the sidebar into the Live Audit tab because the sidebar is
+  for app-level metadata, and a `Run` control belongs with the content it runs.
+  Widget keys (`run_live_audit`, `portfolio_case`, `portfolio_run_test`) exist so
+  AppTest can address them. `tests/test_dashboard_portfolio.py` closes half of the
+  long-standing "no pytest coverage for `dashboard/app.py`" gap: five AppTest cases
+  written and run **red** first (4 failed: `assert 'Live Audit' in ['Live Trace',
+  'Certificate']`, three `KeyError: 'portfolio_case'`) before the UI existed.
+  Deliberate deviation: `st.selectbox` instead of the guidance's preferred
+  `st.segmented_control`, because five long case names overflow a segmented row.
 
 ## Known Gaps
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
@@ -427,10 +458,23 @@ D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard
 - **The four new checkers ship no negative-path test except Case 018's.** A
   checker that always returned FAILED would still pass Cases 015-017, because
   nothing asserts `{"status": "PASSED"}` for a clean trace.
+- **The portfolio runner executes pytest inside the web process.** The button
+  calls `subprocess.run([...], cwd=ROOT)` on a path taken from `CASES`; the
+  argument is never user-supplied, but the dashboard therefore holds write-capable
+  authority over its own repo, and a case whose test file mutates state would be
+  triggered by a click (D-025).
+- **A test timeout is unhandled.** `run_case_test` passes `timeout=180`; a
+  `subprocess.TimeoutExpired` is not caught, so a hanging suite surfaces as a
+  Streamlit exception in the tab rather than a labelled verdict.
+- **Everything in both tabs renders on every rerun.** No `on_change`/`.open`
+  gating is used, so switching tabs or clicking a widget re-reads the selected
+  `PORTFOLIO/*.md` and re-emits the full case document. It is cheap (a cached file
+  read) but it is not lazy, and the guidance's warning about work inside
+  `st.tabs` applies to any future expensive addition.
 
 ## Next Actions
 1. User review of `app/llm_agent.py`, `scripts/run_live_audit.py`,
-   `scripts/run_live_certificate.py`, and D-013 to D-024.
+   `scripts/run_live_certificate.py`, and D-013 to D-025.
 2. Make the live model the judge in `evals/calibration/harness.py` over a
    human-labeled corpus; until then every Kappa on a certificate is simulated and
    must not be published.
@@ -438,8 +482,11 @@ D-005 to D-012 for the pipeline, D-013 to D-017 for the live agent and dashboard
    the LLM judge's calibration is treated as complete.
 4. Record `RefundResult` in `GeminiAgent.trace`, and add pytest coverage for
    `chat` with a fake session (Rule 1).
-5. Add pytest coverage for `dashboard/app.py` and the certificate edge cases
-   (contradiction `ValueError`, 0.60/0.43 boundaries).
+5. ~~Add pytest coverage for `dashboard/app.py`~~ **PARTLY DONE (D-025)** —
+   `tests/test_dashboard_portfolio.py` covers tab structure, the case selector, a
+   write-up rendering, the pytest runner and the moved live-audit path. Still
+   uncovered: the certificate download button, the record-4 replay contents, and
+   the certificate edge cases (contradiction `ValueError`, 0.60/0.43 boundaries).
 6. Decide whether a certificate may name a live model while its Kappa comes from
    the mock judge (D-016), and whether the signed-certificate placeholders
    (`[QA Auditor]`) and the AIUC-1 self-description stay as literal text.

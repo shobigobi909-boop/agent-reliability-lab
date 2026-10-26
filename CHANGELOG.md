@@ -445,3 +445,59 @@
   replacement capture and did not modify `PORTFOLIO/CASE_014_Duplicate_Refund.md`.
 - Cases 015-017 have no test asserting the checker returns `PASSED` on a clean
   trace, and no test covers the fixtures' no-trigger branches (Next Action 10).
+
+## 2026-10-26 — Phase 9: Interactive portfolio UI with AppTest coverage
+
+### Changed
+- `dashboard/app.py` — two top-level tabs, `st.tabs(["Live Audit", "Portfolio Case
+  Studies"])`. The existing D-017 replay (Run button, the three metric cards and the
+  nested `Live Trace` / `Certificate` tabs) moved intact into tab 1; the Run button
+  moved out of the sidebar into that tab, and the sidebar now carries app metadata
+  only.
+- `dashboard/app.py` — new `CASES` map (case → `{"md", "test"}`) for Cases 014-018,
+  a cached `read_case_markdown()` (UTF-8 read of `PORTFOLIO/*.md`), and
+  `run_case_test()` which shells `subprocess.run([PYTHON, "-m", "pytest", <test>,
+  "-q"], cwd=ROOT, capture_output=True)` with a 180s timeout. `PYTHON` is
+  `os.environ.get("LAB_PYTHON", sys.executable)`. Imports added: `os`,
+  `subprocess`; `ROOT` is now computed once and reused for `sys.path`.
+- New widget keys: `run_live_audit`, `portfolio_case`, `portfolio_run_test`.
+- `tests/test_dashboard_portfolio.py` — new, five AppTest cases.
+- `STATE.md` — D-025, Phase 9 status bullets, three new Known Gaps, Next Action 5
+  marked partly done, Next Action 1 widened to D-025.
+
+### Evidence
+- Rule 1 honoured for the UI: the test file was written and run **before** the app
+  was edited, and failed for the right reasons —
+  `AssertionError: assert 'Live Audit' in ['Live Trace', 'Certificate']` and three
+  `KeyError: 'portfolio_case'` — 4 failed in 7.93s.
+- After the change: `pytest tests/test_dashboard_portfolio.py -q -l` → **4 passed**
+  (5 after the live-audit regression case was added in the same session).
+- Full suite: `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **19 passed in
+  7.38s** (14 before this phase).
+- The AppTest coverage exercises real behaviour, not imports: selecting "Case 018:
+  OAuth Bypass" and asserting the rendered Markdown contains "Case 018: MCP
+  Authorization Bypass", and clicking `portfolio_run_test` and asserting the
+  captured `st.code` output contains "1 passed" — i.e. a real pytest subprocess ran
+  from inside the app.
+- `test_live_audit_button_still_produces_the_audit` is new coverage for moved code:
+  it clicks `run_live_audit` and asserts `a1_status == "PASSED"`,
+  `refund_count == 1`, a verdict in `{CLEAN, QUALIFIED, DISCLAIMER}` and a
+  certificate containing its §1.1 heading. The verdict is deliberately not pinned
+  to `QUALIFIED`, because `run_calibration()`'s module-level RNG makes the number
+  process-dependent (D-017).
+- No Streamlit server was listening on ports 8501-8509 at the time of the edit.
+
+### Deviation
+- `st.selectbox` for the case selector instead of the Streamlit guidance's preferred
+  `st.segmented_control`: five long labels ("Case 018: OAuth Bypass") overflow a
+  segmented row. The guidance's own exception covers longer labels.
+
+### Test state
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **19 passed**.
+- Cases 015-018 unchanged and still green.
+
+### Open
+- The portfolio runner executes pytest inside the web process and does not catch
+  `subprocess.TimeoutExpired`; both are recorded as Known Gaps rather than fixed.
+- Certificate download, the record-4 replay contents and the certificate edge cases
+  remain uncovered.
