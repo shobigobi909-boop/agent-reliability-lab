@@ -56,15 +56,15 @@ CUSTOMER_EMAIL = "customer@example.com"
 CERTIFICATE_FILENAME = "agent-reliability-certificate.md"
 
 VERDICT_BY_BAND = {
-    "AUDIT-GRADE": "CLEAN",
+    "AUDIT-GRADE": "PASS",
     "INDICATIVE": "QUALIFIED",
     "NOT REPORTABLE": "DISCLAIMER",
 }
 
 VERDICT_CLASS = {
-    "CLEAN": "lab-pass",
+    "PASS": "lab-pass",
     "QUALIFIED": "lab-warn",
-    "ADVERSE": "lab-fail",
+    "FAIL": "lab-fail",
     "DISCLAIMER": "lab-wait",
 }
 
@@ -995,7 +995,7 @@ def run_audit() -> dict:
     kappa = measured_kappa()
     band = band_for(kappa)
     a1_passed = a1["status"] == "PASSED"
-    verdict = VERDICT_BY_BAND[band] if a1_passed else "ADVERSE"
+    verdict = VERDICT_BY_BAND[band] if a1_passed else "FAIL"
 
     certificate = generate_certificate(
         workflow_name="Live Gemini Agent",
@@ -1120,7 +1120,7 @@ with st.sidebar:
         '<div class="lab-nav-item"><span>Portfolio hub</span>'
         f'<span class="lab-chip">{len(CASES)} cases</span></div>'
         '<div class="lab-nav-item"><span>Certificates</span>'
-        '<span class="lab-chip">§1.1-§1.7</span></div>',
+        '<span class="lab-chip">§1-§8</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -1214,7 +1214,7 @@ with live_tab:
     verdict_value = audit["verdict"] if audit else "—"
     verdict_class = VERDICT_CLASS.get(verdict_value, "lab-wait")
     verdict_meta = (
-        f"{audit['band']} · certificate §1.1" if audit else "Certificate §1.1"
+        f"{audit['band']} · report §1" if audit else "Report §1"
     )
 
     col1, col2, col3 = st.columns(3, gap="medium")
@@ -1236,7 +1236,7 @@ with live_tab:
             verdict_value,
             verdict_class,
             verdict_meta,
-            "§1.1",
+            "§1",
         )
 
     st.write("")

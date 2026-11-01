@@ -14,11 +14,12 @@ ORDER_TOTAL = 100.00
 REFUND_AMOUNT = 50.00
 FLIP_RATE = 0.15
 SEED = 20261021
+SAMPLE_SIZE = 50
 
 _rng = random.Random(SEED)
 
 
-def generate_dataset(size: int = 50) -> list[FakeDB]:
+def generate_dataset(size: int = SAMPLE_SIZE) -> list[FakeDB]:
     dataset: list[FakeDB] = []
     for index in range(size):
         db = FakeDB()

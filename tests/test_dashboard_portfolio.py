@@ -64,5 +64,5 @@ def test_live_audit_button_still_produces_the_audit():
     assert not at.exception
     assert audit["a1_status"] == "PASSED"
     assert audit["refund_count"] == 1
-    assert audit["verdict"] in {"CLEAN", "QUALIFIED", "DISCLAIMER"}
-    assert "§1.1" in audit["certificate"] or "1.1" in audit["certificate"]
+    assert audit["verdict"] in {"PASS", "QUALIFIED", "DISCLAIMER"}
+    assert "## 1. Verdict:" in audit["certificate"]

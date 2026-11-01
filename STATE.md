@@ -110,6 +110,15 @@ D-017 for the live agent and the original dashboard.
   path and parsed `pytest` summary, and the raw log sits in a collapsed expander.
   Contrast measured across 12 text/background pairs: lowest is 5.13:1, most are
   10-18:1. Suite still **19 passed**.
+- Audit report rewritten to the eight-section format (D-027):
+  `# Agent Reliability Audit Report — …` with metadata block, `## 1. Verdict: X`,
+  invariant table, statistical-claims table, MCP supply-chain section, framework
+  mapping, recommendations and a named auditor sign-off. Verdict vocabulary is now
+  PASS / QUALIFIED / FAIL (+ DISCLAIMER for a sub-reportable Kappa), replacing
+  CLEAN / QUALIFIED / ADVERSE / DISCLAIMER. §5 is no longer an assertion: a real
+  scanner (`evals/mcp_supply_chain.py`) parses `FunctionDeclaration` and
+  `@server.tool(...)` declarations and reports the count it actually reviewed.
+  Suite: **25 passed**.
 
 ## Architectural Decisions
 - **D-001 — Deliberate missing duplicate-refund guard (superseded by D-006).**
@@ -388,11 +397,57 @@ D-017 for the live agent and the original dashboard.
   green sentence rather than a traceback. This supersedes the Known Gap "the UI's
   dark look rests on CSS selectors, not on a theme": a theme is now pinned, though
   the selectors and `!important` rules for the custom cards remain.
+- **D-027 — The audit report is eight numbered sections, and three of the briefed
+  numbers were replaced with measured ones.** `evals/certificate.py` now renders
+  `# Agent Reliability Audit Report — {workflow}`, a metadata block (named auditor,
+  system, workflow, model, dynamic audit date, test count, invariant spec), then
+  `## 1. Verdict: X` … `## 8. Auditor sign-off`, with the verdict legend, the
+  invariant table, the statistical-claims table, the supply-chain section, the
+  AIUC-1 disclaimer, four recommendations and the named signer + no-fee re-audit
+  commitment. Verdict vocabulary changed to **PASS / QUALIFIED / FAIL** (plus
+  **DISCLAIMER** when Kappa < 0.43, rendered as an extra legend row only in that
+  case), superseding the CLEAN / ADVERSE naming of D-010/D-011 and the §1.1-§1.7
+  numbering; `tests/test_certificate.py` was rewritten to the new contract and
+  `dashboard/app.py`, the dashboard AppTest and both scripts follow the new names.
+  Rationale for the three deviations from the briefed text, each of which would
+  otherwise have put an unmeasured claim on a published audit report:
+  **(a)** "Test cases run: 14" → **19**, the number pytest actually collects today
+  (`--collect-only` → `19 tests collected`); a stale count is a false statement
+  about the audit's own scope.
+  **(b)** "across 100 test cases" / "Sample size 100" → **50**, the real
+  `harness.SAMPLE_SIZE` (D-009 generates 25/25); padding the denominator would
+  misrepresent the statistical evidence, which is the D-016 failure mode.
+  **(c)** "No hidden Unicode … (4 tools)" → **3**, produced by a real scanner.
+  Section 5 previously asserted a static review that had never been run: nothing in
+  the repo inspected tool descriptions. `evals/mcp_supply_chain.py` now parses each
+  module with `ast`, extracts `FunctionDeclaration(name=, description=)` and
+  `@server.tool(description=)`/docstring descriptions, resolves module-level string
+  constants, and reports zero-width, bidi-control and instruction-override matches.
+  `tests/test_mcp_supply_chain.py` proves both directions — the repo's three tools
+  come back clean, and a deliberately poisoned description is flagged with both
+  reasons — so the checker cannot pass by never firing (the Case 017 lesson).
+  Also kept from the brief: the audit date is dynamic (`date.today()`), the signer
+  is the named individual rather than a `[QA Auditor]` placeholder, and the
+  label-contradiction `ValueError` (D-010) still guards the band↔verdict pair.
+  Two prose changes were made for internal consistency rather than accuracy:
+  §2 now says "a judge" instead of "an LLM judge" because §4 discloses that the
+  judge is the D-009 mock, and the band label and confirmatory threshold quote the
+  code's 0.43/0.60 rather than the brief's 0.41/0.80 — a report may not state
+  thresholds its own generator does not use.
 
 ## Known Gaps
+- **The audit report's test count is a constant.** `AUDIT_TEST_CASES = 19` in
+  `evals/certificate.py` was written by hand when pytest collected 19 tests; add a
+  test and the report keeps claiming 19. Nothing re-derives it, and a collection
+  probe (`pytest --collect-only`, ~7s) was judged too slow to run per render.
+- **The report's thresholds are duplicated in prose.** §4 states "Moderate
+  (0.43-0.60)" and "at least 0.60" by formatting `BAND_REPORTABLE` / `BAND_FLOOR`,
+  but the label text itself is a hand-written dict, so changing the threshold moves
+  the numbers and leaves the words.
 - **`evals/certificate.py` band-derivation edge cases remain untested.** The
-  ADVERSE/CLEAN paths are covered; the label-contradiction `ValueError`, the
-  exact 0.60/0.43 boundaries, and the rendered §1.2/§1.5 text are not.
+  PASS/QUALIFIED/FAIL paths and the contradiction `ValueError` are covered; the
+  exact 0.60/0.43 boundaries, the DISCLAIMER legend row, and the failure-path
+  invariant rows are not.
 - **The certificate is Unicode and this console is not.** `—` and `§` print as
   replacement characters under the default Windows code page; running the
   generator needs UTF-8 (`python -X utf8` or `PYTHONIOENCODING=utf-8`). The
@@ -518,7 +573,7 @@ D-017 for the live agent and the original dashboard.
 
 ## Next Actions
 1. User review of `app/llm_agent.py`, `scripts/run_live_audit.py`,
-   `scripts/run_live_certificate.py`, and D-013 to D-025.
+   `scripts/run_live_certificate.py`, `evals/certificate.py`, and D-013 to D-027.
 2. Make the live model the judge in `evals/calibration/harness.py` over a
    human-labeled corpus; until then every Kappa on a certificate is simulated and
    must not be published.

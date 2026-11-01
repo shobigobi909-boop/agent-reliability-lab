@@ -578,3 +578,63 @@
   renders as a single card.
 - `PYTEST_SUMMARY` scrapes stdout, so a reformatted pytest line would silently drop
   the chip.
+
+## 2026-11-01 — Phase 10: Eight-section audit report and a real supply-chain scanner
+
+### Changed
+- `evals/certificate.py` — rewritten. Renders `# Agent Reliability Audit Report —
+  {workflow}` followed by a metadata block (named auditor and role, system under
+  test, workflow, model version, dynamic audit date, test cases run, invariant
+  spec), then `## 1. Verdict`, `## 2. Scope and methodology`, `## 3. Invariant
+  results`, `## 4. Statistical claims`, `## 5. MCP supply-chain review`,
+  `## 6. Framework mapping`, `## 7. Recommendations`, `## 8. Auditor sign-off`.
+  Verdict vocabulary is PASS / QUALIFIED / FAIL, with DISCLAIMER (and an extra
+  legend row) only when Kappa < 0.43; FAIL is forced when the A1 outcome is False.
+  The band↔verdict contradiction `ValueError` is retained.
+- `evals/mcp_supply_chain.py` (new) — static reviewer for tool descriptions. Parses
+  each module with `ast`, extracts `FunctionDeclaration(name=, description=)` and
+  `@server.tool(description=)` / docstring descriptions, resolves module-level
+  string constants, and reports zero-width (`\u200b-\u200f`, `\u2060`, `\ufeff`),
+  bidi-control (`\u202a-\u202e`, `\u2066-\u2069`) and instruction-override matches.
+- `evals/calibration/harness.py` — `SAMPLE_SIZE = 50` extracted and used as the
+  `generate_dataset` default; no behavioural change.
+- `dashboard/app.py` — verdict maps and labels follow the new vocabulary
+  (`PASS`/`FAIL`; the card badge and certificate reference now say `§1`, sidebar
+  chip `§1-§8`).
+- `tests/test_certificate.py` — rewritten for the new contract: FAIL, QUALIFIED and
+  PASS paths, named signer and scope, all eight section headers, the scanned tool
+  count, and the contradiction `ValueError`.
+- `tests/test_mcp_supply_chain.py` (new) — proves both directions: the repo's three
+  tools scan clean, and a poisoned description is flagged with both reasons.
+- `tests/test_dashboard_portfolio.py` — verdict set updated to
+  `{PASS, QUALIFIED, DISCLAIMER}` and the certificate assertion to
+  `"## 1. Verdict:"`.
+
+### Evidence
+- `./.venv/Scripts/python.exe -m pytest tests/ -q -l` → **25 passed** (19 before).
+- `scripts/run_full_audit.py` renders the full eight-section report end to end:
+  `## 1. Verdict: QUALIFIED`, `| Agreement band | Moderate (0.43-0.60) |`,
+  `| Sample size | 50 |`, `(3 tools)`, signer `Shoaib Hussain` dated `2026-11-01`.
+- Scanner on the repo: `tools_reviewed = 3`, `names = [issue_refund, issue_refund,
+  shell_ping]`, `findings = []`. Poisoned fixture returns
+  `reasons = [zero_width, instruction_override]`.
+- `pytest --collect-only -q` → `19 tests collected`, which is the figure the report
+  prints as "Test cases run".
+
+### Deliberate deviations from the briefed text (D-027)
+- "Test cases run: 14" → **19** (the real collection count).
+- "across 100 test cases" and "Sample size 100" → **50** (`harness.SAMPLE_SIZE`).
+- "(4 tools)" → **3** (what the scanner actually found).
+- §2 "an LLM judge" → **"a judge"**, because §4 discloses the D-009 mock judge;
+  leaving both was a document contradicting itself.
+- Band label and confirmatory threshold quoted as **0.43 / 0.60** (the code's
+  thresholds) instead of 0.41 / 0.80, so the report cannot state a rule its own
+  generator does not apply.
+- Kept verbatim: the eight-section structure, the verdict legend, the briefed
+  wording, the named signer (no `[QA Auditor]` placeholder), the no-fee re-audit
+  commitment, and the closing guarantee-of-behaviour disclaimer.
+
+### Open
+- `AUDIT_TEST_CASES = 19` is a hand-written constant; nothing re-derives it.
+- The prose threshold labels are a hand-written dict keyed by band.
+- The DISCLAIMER legend row and the failure-path invariant rows have no test.
